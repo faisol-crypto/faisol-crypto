@@ -41,6 +41,52 @@ def _srt_time(t):
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
+# words that lean on the previous word: never start a caption line with them
+CLITICS = {"out", "lah", "je", "kan", "tu", "guys", "pun", "ni"}
+
+
+def balance(phrase, max_words):
+    """Split a phrase into caption lines.
+
+    Exhaustive over break points (phrases are short): minimise the longest
+    line in characters, never start a line with a clitic (lah, je, out ...),
+    avoid one-word lines, and respect max_words.
+    """
+    n = len(phrase)
+    if n <= max_words:
+        return [phrase]
+    lens = [len(w["text"]) for w in phrase]
+    best = None
+
+    def line_cost(i, j):
+        chars = sum(lens[i:j]) + (j - i - 1)
+        c = chars
+        if phrase[i]["key"] in CLITICS:
+            c += 60
+        if j - i == 1:
+            c += 25
+        return c
+
+    k = -(-n // max_words)  # fewest lines that respect max_words
+
+    def search(i, parts):
+        nonlocal best
+        if len(parts) > k:
+            return
+        if i == n:
+            # tie-break: longer line first reads more naturally
+            cost = max(line_cost(a, b) for a, b in parts) + 0.01 * line_cost(*parts[-1])
+            if best is None or cost < best[0]:
+                best = (cost, list(parts))
+            return
+        for j in range(i + 1, min(n, i + max_words) + 1):
+            parts.append((i, j))
+            search(j, parts)
+            parts.pop()
+
+    search(0, [])
+    return [phrase[a:b] for a, b in best[1]]
+
 def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_stem):
     with open(transcript_path, encoding="utf-8") as fh:
         lines = json.load(fh)
@@ -87,30 +133,21 @@ def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_
                 text = raw
                 if float(w.get("p", 1.0)) < min_prob:
                     review.append({"t": round(ts, 2), "word": raw, "action": f"keyakinan rendah ({w.get('p')})"})
+            # phrases break only on pauses, punctuation or a new transcript line
             gap = last_end is not None and ts - last_end > 0.35
             punct = last_end is not None and cur and (cur[-1].get("brk") or cur[-1].get("line") != w["line"])
-            if cur and (len(cur) >= max_words or gap or punct):
+            if cur and (gap or punct):
                 seg_chunks.append(cur)
                 cur = []
             if text:
-                cur.append({"text": text, "s": ts, "e": te, "line": w["line"],
+                cur.append({"text": text, "s": ts, "e": te, "line": w["line"], "key": key,
                             "hl": key in highlight or text.lower() in highlight,
                             "brk": bool(re.search(r"[,.?!]$", w["w"].strip()))})
             last_end = te
         if cur:
             seg_chunks.append(cur)
-        # no orphan words: fold a lone word into the phrase it belongs to
-        merged = []
-        for ch in seg_chunks:
-            close = (merged and ch[0]["s"] - merged[-1][-1]["e"] < 0.45
-                     and ch[0].get("line") == merged[-1][-1].get("line"))
-            if close and len(ch) == 1 and len(merged[-1]) >= 3:
-                ch = [merged[-1].pop()] + ch  # "GOLD TERLALU BANYAK" / "FAKE OUT"
-            elif close and len(ch) == 1:
-                merged[-1] = merged[-1] + ch
-                continue
-            merged.append(ch)
-        chunks.extend(merged)
+        for phrase in seg_chunks:
+            chunks.extend(balance(phrase, max_words))
 
     events = []
     for i, ch in enumerate(chunks):

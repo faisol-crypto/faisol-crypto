@@ -59,10 +59,10 @@
       "wti"
     ],
     "highlight_color": "#D9B56A",
-    "max_words": 3,
+    "max_words": 4,
     "uppercase": true,
     "y": 0.7,
-    "size": 0.064,
+    "size": 0.06,
     "min_prob": 0.35
   },
   "graphics": [
@@ -130,8 +130,15 @@
     {
       "type": "keyword",
       "seg": "why",
-      "at": 4.6,
-      "dur": 1.75,
+      "at": 3.7,
+      "dur": 0.95,
+      "text": "Kita tak tahu."
+    },
+    {
+      "type": "keyword",
+      "seg": "why",
+      "at": 4.72,
+      "dur": 1.6,
       "text": "Lagi agresif."
     },
     {
@@ -346,10 +353,10 @@
       "role": "development",
       "in": 35.3,
       "out": 41.65,
-      "purpose": "Sebab — volatiliti. Kenyataan berita ialah kata-kata speaker sendiri; tidak dijadikan grafik.",
+      "purpose": "Sebab — volatiliti. Push-in perlahan supaya babak panjang tidak statik; 'Kita tak tahu.' dan 'Lagi agresif.' ialah petikan tepat. Kenyataan berita kekal kata-kata speaker, tidak dijadikan grafik.",
       "zoom": {
         "from": 1.0,
-        "to": 1.0,
+        "to": 1.07,
         "cx": 0.5,
         "cy": 0.4
       }

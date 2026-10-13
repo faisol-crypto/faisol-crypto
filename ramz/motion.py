@@ -225,9 +225,9 @@ class Title(Graphic):
         yy = self.brand_line(f, cx, 58 * SS, t, at=0.0)
         l1 = text_img(self.p["line1"], font("semibold", self.p.get("size1", 56)), rgb(self.white))
         l2 = text_img(self.p["line2"], font("display", self.p.get("size2", 118)), rgb(self.gold))
-        l2 = sweep(l2, prog(t, 0.95, 0.7))
-        f.paste(reveal(l1, prog(t, -0.15, 0.45)), cx - l1.size[0] // 2, yy)
-        f.paste(reveal(l2, prog(t, 0.05, 0.45)), cx - l2.size[0] // 2, yy + l1.size[1] + 2 * SS)
+        l2 = sweep(l2, prog(t, 0.45, 0.75))  # headline is complete on frame 0 (thumbnail); the sweep is the motion
+        f.paste(reveal(l1, prog(t, -0.45, 0.45)), cx - l1.size[0] // 2, yy)
+        f.paste(reveal(l2, prog(t, -0.38, 0.45)), cx - l2.size[0] // 2, yy + l1.size[1] + 2 * SS)
         return f.final(k, off)
 
 
