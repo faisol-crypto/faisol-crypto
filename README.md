@@ -1,6 +1,6 @@
-# RamzlayerG — Video Production Toolkit
+# SIR RAMZ — Video Production Toolkit
 
-Editing pipeline for RamzlayerG videos (XAUUSD, market structure, price action), built on **ffmpeg + Python**.
+Editing pipeline for SIR RAMZ videos (XAUUSD, market structure, price action), built on **ffmpeg + Python**.
 The full standard is in [`docs/PRODUCTION_SYSTEM.md`](docs/PRODUCTION_SYSTEM.md).
 
 **HOOK FIRST. STORY SECOND. EFFECTS WITH PURPOSE. QUALITY THROUGHOUT.**
@@ -27,7 +27,7 @@ python3 -m ramz.render plans/<video>.json
 python3 -m ramz.qc out/final.mp4 --plan plans/<video>.json
 ```
 
-The render writes `final.mp4`, `final.timeline.md` (a per-scene timeline: visual, audio, animation, motion, FX, colour, transition, creative purpose) and `final.edl.json`.
+The render writes `final.mp4` (captions), `final_clean.mp4` (no captions), `final.edl` (CMX3600 for Resolve/Premiere), `final.srt`, `final.timeline.md` (a per-scene timeline: visual, audio, animation, motion, FX, colour, transition, creative purpose) and `final.edl.json`.
 
 ## Modules
 
@@ -37,6 +37,8 @@ The render writes `final.mp4`, `final.timeline.md` (a per-scene timeline: visual
 | `ramz/privacy.py` | two-pass face tracking (bidirectional interpolation), feathered blur/mosaic/solid, HDR→SDR + CFR, coverage & detail-leak audit |
 | `ramz/captions.py` | short-form captions (2–3 words) from the transcript, remapped to the final timeline; unclear words hidden until confirmed |
 | `ramz/render.py` | reorders the hook, fits to 9:16 (crop/blur_pad/pad), sub-pixel zoom, colour grades, controlled FX, text animation, chart annotations, SFX, music ducking, 2-pass loudness, subtitles |
+| `ramz/motion.py` | bespoke motion graphics (Pillow, 2x supersampled): title, strike, illustrative diagram, compare card, statement, keyword, end card |
+| `ramz/music.py` | original procedural ambient bed (royalty-free) |
 | `ramz/sfx.py` | procedural starter SFX kit (whoosh, impact, riser, click, blip, typing, glitch, ambient) |
 | `ramz/qc.py` | measured QC plus a manual checklist — no automatic score |
 

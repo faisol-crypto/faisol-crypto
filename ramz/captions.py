@@ -44,9 +44,13 @@ def _srt_time(t):
 def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_stem):
     with open(transcript_path, encoding="utf-8") as fh:
         lines = json.load(fh)
-    words = [w for ln in lines for w in ln.get("words", [])]
+    words = [dict(w, line=li) for li, ln in enumerate(lines) for w in ln.get("words", [])]
+    drop_below = float(cfg.get("drop_below", 0.05))
     replace = {k.lower(): v for k, v in cfg.get("replace", {}).items()}
     omit = {o.lower() for o in cfg.get("omit", [])}
+    highlight = {h.lower() for h in cfg.get("highlight", [])}
+    hl_col = cfg.get("highlight_color", "#D9B56A").lstrip("#")
+    hl_tag = "{\\c&H" + hl_col[4:6] + hl_col[2:4] + hl_col[0:2] + "&}"
     min_prob = float(cfg.get("min_prob", 0.35))
     max_words = int(cfg.get("max_words", 3))
     upper = cfg.get("uppercase", True)
@@ -60,7 +64,9 @@ def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_
         for w in words:
             ws, we = float(w["s"]), float(w["e"])
             mid = (ws + min(we, ws + 0.5)) / 2
-            if not (seg["in"] <= mid <= seg["out"]):
+            # word belongs to the segment if its centre is inside, or it starts clearly inside
+            # (Whisper often stretches the last word of a phrase into the following silence)
+            if not (seg["in"] <= mid <= seg["out"] or seg["in"] <= ws <= seg["out"] - 0.08):
                 continue
             raw = _clean(w["w"])
             key = raw.lower()
@@ -68,7 +74,10 @@ def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_
                 continue
             ts = off + max(ws, seg["in"]) - seg["in"]
             te = off + min(we, ws + 0.6, seg["out"]) - seg["in"]  # whisper pads word ends with silence
-            if key in omit:
+            if key not in replace and key not in highlight and float(w.get("p", 1.0)) < drop_below:
+                review.append({"t": round(ts, 2), "word": raw, "action": f"dibuang — hampir pasti bukan pertuturan ({w.get('p')})"})
+                text = None
+            elif key in omit:
                 review.append({"t": round(ts, 2), "word": raw, "action": "disembunyi (perlu pengesahan)"})
                 text = None
             elif key in replace:
@@ -79,19 +88,22 @@ def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_
                 if float(w.get("p", 1.0)) < min_prob:
                     review.append({"t": round(ts, 2), "word": raw, "action": f"keyakinan rendah ({w.get('p')})"})
             gap = last_end is not None and ts - last_end > 0.35
-            punct = last_end is not None and cur and cur[-1].get("brk")
+            punct = last_end is not None and cur and (cur[-1].get("brk") or cur[-1].get("line") != w["line"])
             if cur and (len(cur) >= max_words or gap or punct):
                 seg_chunks.append(cur)
                 cur = []
             if text:
-                cur.append({"text": text, "s": ts, "e": te, "brk": bool(re.search(r"[,.?!]$", w["w"].strip()))})
+                cur.append({"text": text, "s": ts, "e": te, "line": w["line"],
+                            "hl": key in highlight or text.lower() in highlight,
+                            "brk": bool(re.search(r"[,.?!]$", w["w"].strip()))})
             last_end = te
         if cur:
             seg_chunks.append(cur)
         # no orphan words: fold a lone word into the phrase it belongs to
         merged = []
         for ch in seg_chunks:
-            close = merged and ch[0]["s"] - merged[-1][-1]["e"] < 0.45
+            close = (merged and ch[0]["s"] - merged[-1][-1]["e"] < 0.45
+                     and ch[0].get("line") == merged[-1][-1].get("line"))
             if close and len(ch) == 1 and len(merged[-1]) >= 3:
                 ch = [merged[-1].pop()] + ch  # "GOLD TERLALU BANYAK" / "FAKE OUT"
             elif close and len(ch) == 1:
@@ -106,8 +118,10 @@ def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_
         end = ch[-1]["e"] + 0.12
         if i + 1 < len(chunks):
             end = min(end + 0.25, chunks[i + 1][0]["s"])
-        text = " ".join(c["text"] for c in ch)
-        events.append((start, max(end, start + 0.3), text.upper() if upper else text))
+        words_out = [(c["text"].upper() if upper else c["text"], c.get("hl")) for c in ch]
+        plain = " ".join(w for w, _ in words_out)
+        styled = " ".join(f"{hl_tag}{w}{{\\c}}" if hl else w for w, hl in words_out)
+        events.append((start, max(end, start + 0.3), plain, styled))
 
     size = int(cfg.get("size", 0.058) * W)
     y = int(cfg.get("y", 0.70) * H)
@@ -122,15 +136,15 @@ def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_
         f"{max(3, size // 12)},{max(1, size // 30)},5,60,60,0,1",
         "", "[Events]", "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
     ]
-    for s, e, text in events:
-        # quick scale pop-in: 88% -> 100% over 90 ms
+    for s, e, _, styled in events:
+        # restrained pop-in: 94% -> 100% with a short fade
         ass.append(f"Dialogue: 0,{_ass_time(s)},{_ass_time(e)},Cap,,0,0,0,,"
-                   f"{{\\pos({W // 2},{y})\\fscx88\\fscy88\\t(0,90,\\fscx100\\fscy100)}}{text}")
+                   f"{{\\pos({W // 2},{y})\\fad(70,50)\\fscx94\\fscy94\\t(0,120,\\fscx100\\fscy100)}}{styled}")
     ass_path = out_stem + ".captions.ass"
     with open(ass_path, "w", encoding="utf-8") as fh:
         fh.write("\n".join(ass) + "\n")
     with open(out_stem + ".srt", "w", encoding="utf-8") as fh:
-        for i, (s, e, text) in enumerate(events, 1):
+        for i, (s, e, text, _) in enumerate(events, 1):
             fh.write(f"{i}\n{_srt_time(s)} --> {_srt_time(e)}\n{text}\n\n")
     with open(out_stem + ".captions_review.md", "w", encoding="utf-8") as fh:
         fh.write("# Semakan caption\n\nPerkataan di bawah perlu disahkan. Betulkan melalui `captions.replace` "

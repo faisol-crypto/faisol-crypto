@@ -76,13 +76,13 @@ def main():
             check("HOOK", "Segment pertama = hook", "PASS" if first.get("role") == "hook" else "FAIL",
                   first.get("id", ""))
             check("HOOK", "Panjang hook", "PASS" if hl <= 3.5 else "WARN", f"{hl:.2f}s")
-            n_text = sum(len(s.get("text", [])) for s in segs)
+            n_text = sum(len(s.get("text", [])) for s in segs) + len(plan.get("graphics", []))
             n_fx = sum(len(s.get("fx", [])) for s in segs)
             n_sfx = sum(len(s.get("sfx", [])) for s in segs)
             dens = (n_fx + n_sfx) / max(info["duration"], 1)
             check("VISUAL", "Kepadatan efek", "PASS" if dens <= 0.35 else "WARN",
                   f"{n_fx} fx + {n_sfx} sfx dalam {info['duration']:.1f}s ({dens:.2f}/s)")
-            check("VISUAL", "Overlay teks", "PASS", f"{n_text} item")
+            check("VISUAL", "Overlay teks/grafik", "PASS", f"{n_text} item")
             grades = {s.get("grade", plan.get("grade", "neutral")) for s in segs}
             check("VISUAL", "Grade konsisten", "PASS" if len(grades) == 1 else "WARN", ", ".join(sorted(grades)))
         side = os.path.splitext(os.path.abspath(plan_source(plan, args.plan)))[0] + ".privacy.json"

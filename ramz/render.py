@@ -18,6 +18,7 @@ import re
 import shutil
 import tempfile
 
+from . import motion
 from .common import (ROOT, fmt_ts, ffmpeg_stderr, hex_to_ff, load_json, probe,
                      require_tools, resolve, run)
 
@@ -69,7 +70,7 @@ class Renderer:
         self.plan_path = os.path.abspath(plan_path)
         self.base = os.path.dirname(self.plan_path)
         self.plan = load_json(self.plan_path)
-        self.brand = load_json(resolve(self.plan.get("brand", os.path.join(ROOT, "brand/ramzlayerg.json")), self.base))
+        self.brand = load_json(resolve(self.plan.get("brand", os.path.join(ROOT, "brand/sirramz.json")), self.base))
         out = self.plan["output"]
         self.W, self.H = int(out.get("width", 1080)), int(out.get("height", 1920))
         self.fps = float(out.get("fps", 30))
@@ -257,6 +258,7 @@ class Renderer:
         v.append(self.fit_filters(fit, seg.get("crop_cx", 0.5), seg.get("crop_cy", 0.5)))
         if seg.get("zoom"):
             v.append(self.zoom_filter(seg["zoom"], dur))
+        v += self.plan.get("correction", [])  # technical fix (e.g. white balance) before the creative grade
         v += GRADES[grade]
         vig = seg.get("vignette", self.plan.get("vignette", 0.0))
         if vig:
@@ -411,39 +413,83 @@ class Renderer:
         mix = self.mix_audio(master, offsets, total)
         norm = self.loudnorm(mix)
 
-        vf = []
+        stem = os.path.splitext(self.out_path)[0]
+        gfx_inputs, gfx_chain, last = [], [], "0:v"
+        for gi, g in enumerate(self.plan.get("graphics", [])):
+            seg_idx = next(i for i, sg in enumerate(segs) if sg.get("id") == g["seg"])
+            start = offsets[seg_idx] + float(g.get("at", 0.0))
+            dur = float(g["dur"])
+            print(f"[ramz] motion graphic {gi + 1}: {g['type']} @ {start:.2f}s ({dur:.2f}s)")
+            gdir = os.path.join(self.tmp, f"gfx_{gi:02d}")
+            x, y = motion.render(g["type"], g, dur, self.fps, gdir, self.plan.get("motion_brand", {}))
+            gfx_inputs += ["-framerate", f"{self.fps}", "-i", os.path.join(gdir, "f%04d.png")]
+            n = len(gfx_inputs) // 4 + 1  # input index (0=master, 1=mix)
+            gfx_chain.append(f"[{n}:v]format=rgba,setpts=PTS-STARTPTS+{start:.4f}/TB[g{gi}]")
+            gfx_chain.append(f"[{last}][g{gi}]overlay={x}:{y}:eof_action=pass:format=auto[v{gi}]")
+            last = f"v{gi}"
+
+        ass_filter = None
         cap = self.plan.get("captions")
         if cap:
             from .captions import build as build_captions
             ass, review = build_captions(cap, resolve(cap["transcript"], self.base), segs, offsets, durs,
-                                         self.W, self.H, cap.get("font", "Inter"),
-                                         os.path.splitext(self.out_path)[0])
+                                         self.W, self.H, cap.get("font", "Inter"), stem)
             if review:
-                self.warnings.append(f"Caption: {len(review)} perkataan perlu disemak "
-                                     f"({os.path.splitext(self.out_path)[0]}.captions_review.md).")
+                self.warnings.append(f"Caption: {len(review)} perkataan perlu disemak ({stem}.captions_review.md).")
             p = ass.replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
-            vf.append(f"ass='{p}':fontsdir='{os.path.dirname(self.font('headline'))}'")
-        subs = self.plan.get("subtitles")
-        if subs:
-            subs_path = resolve(subs if isinstance(subs, str) else subs["file"], self.base)
-            vf.append(self.subtitle_filter(subs_path))
-        cmd = ["ffmpeg", "-y", "-hide_banner", "-i", master, "-i", mix, "-map", "0:v", "-map", "1:a"]
-        if vf:
-            cmd += ["-vf", ",".join(vf), "-c:v", "libx264", "-preset", self.preset, "-crf", str(self.crf),
-                    "-pix_fmt", "yuv420p"]
+            ass_filter = f"ass='{p}':fontsdir='{os.path.dirname(self.font('headline'))}'"
+        elif self.plan.get("subtitles"):
+            subs = self.plan["subtitles"]
+            ass_filter = self.subtitle_filter(resolve(subs if isinstance(subs, str) else subs["file"], self.base))
+
+        chain = list(gfx_chain)
+        outputs = []
+        enc = ["-c:v", "libx264", "-preset", self.preset, "-crf", str(self.crf), "-pix_fmt", "yuv420p",
+               "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",
+               "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", "-t", f"{total:.3f}"]
+        base = f"[{last}]" if last != "0:v" else "[0:v]"
+        if ass_filter:
+            clean_path = stem + "_clean.mp4"
+            chain.append(f"{base}split=2[vclean][vsub0]")
+            chain.append(f"[vsub0]{ass_filter}[vsub]")
+            chain.append("[1:a]" + norm + ",asplit=2[a0][a1]")
+            outputs += ["-map", "[vsub]", "-map", "[a0]", *enc, self.out_path,
+                        "-map", "[vclean]", "-map", "[a1]", *enc, clean_path]
         else:
-            cmd += ["-c:v", "copy"]
-        cmd += ["-af", norm, "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
-                "-movflags", "+faststart", "-t", f"{total:.3f}", self.out_path]
-        print("[ramz] final export")
+            chain.append(f"{base}null[vout]")
+            chain.append("[1:a]" + norm + "[a0]")
+            outputs += ["-map", "[vout]", "-map", "[a0]", *enc, self.out_path]
+        cmd = ["ffmpeg", "-y", "-hide_banner", "-i", master, "-i", mix, *gfx_inputs,
+               "-filter_complex", ";".join(chain), *outputs]
+        print("[ramz] final export" + (" (dengan caption + versi bersih)" if ass_filter else ""))
         run(cmd, quiet=not self.verbose)
         self.write_reports(offsets, durs)
         if not self.keep_temp:
             shutil.rmtree(self.tmp, ignore_errors=True)
         print(f"[ramz] SIAP: {self.out_path} ({total:.2f}s)")
+        if ass_filter:
+            print(f"[ramz] SIAP: {stem}_clean.mp4 (tanpa caption)")
         for w in self.warnings:
             print(f"[ramz] AMARAN: {w}")
         return self.out_path
+
+    def write_cmx_edl(self, path, offsets, durs):
+        """CMX3600 EDL of the cuts — imports into DaVinci Resolve / Premiere / FCP."""
+        fps = int(round(self.fps))
+
+        def tc(sec):
+            f = int(round(sec * fps))
+            return f"{f // (3600 * fps):02d}:{f // (60 * fps) % 60:02d}:{f // fps % 60:02d}:{f % fps:02d}"
+        reel = os.path.splitext(os.path.basename(self.source))[0][:8].upper().replace(" ", "_") or "AX"
+        lines = [f"TITLE: {os.path.splitext(os.path.basename(self.out_path))[0]}", "FCM: NON-DROP FRAME", ""]
+        for i, (seg, off, d) in enumerate(zip(self.plan["segments"], offsets, durs), 1):
+            lines.append(f"{i:03d}  {reel:<8} AA/V  C        {tc(seg['in'])} {tc(seg['in'] + d)} "
+                         f"{tc(off)} {tc(off + d)}")
+            lines.append(f"* FROM CLIP NAME: {os.path.basename(self.source)}")
+            lines.append(f"* COMMENT: {seg.get('id', '')} ({seg.get('role', '')})")
+            lines.append("")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("\n".join(lines))
 
     def subtitle_filter(self, path):
         style = self.plan.get("subtitle_style", {})
@@ -482,6 +528,7 @@ class Renderer:
             lines.append(f"- **Transisi:** masuk {seg.get('transition_in', 'cut')}, keluar {seg.get('transition_out', 'cut')}")
             lines.append(f"- **Tujuan kreatif:** {seg.get('purpose', '—')}")
             lines.append("")
+        self.write_cmx_edl(stem + ".edl", offsets, durs)
         with open(stem + ".edl.json", "w", encoding="utf-8") as fh:
             json.dump(edl, fh, indent=2, ensure_ascii=False)
         with open(stem + ".timeline.md", "w", encoding="utf-8") as fh:

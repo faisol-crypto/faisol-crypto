@@ -2,7 +2,7 @@
   "_comment": "Contoh plan 9:16. Semua koordinat dinormalkan (0-1) pada kanvas output. Kedudukan level/zon/label MESTI diambil dari chart sebenar — jangan reka pergerakan harga.",
   "source": "../tests/out/synthetic_protected.mp4",
   "privacy_required": true,
-  "brand": "../brand/ramzlayerg.json",
+  "brand": "../brand/sirramz.json",
   "output": {"path": "../tests/out/final_example.mp4", "width": 1080, "height": 1920, "fps": 30, "crf": 18, "preset": "medium"},
   "fit": "blur_pad",
   "grade": "dark_cinematic",
