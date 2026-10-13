@@ -1,0 +1,72 @@
+{
+  "_comment": "Contoh plan 9:16. Semua koordinat dinormalkan (0-1) pada kanvas output. Kedudukan level/zon/label MESTI diambil dari chart sebenar — jangan reka pergerakan harga.",
+  "source": "../tests/out/synthetic_protected.mp4",
+  "privacy_required": true,
+  "brand": "../brand/ramzlayerg.json",
+  "output": {"path": "../tests/out/final_example.mp4", "width": 1080, "height": 1920, "fps": 30, "crf": 18, "preset": "medium"},
+  "fit": "blur_pad",
+  "grade": "dark_cinematic",
+  "vignette": 0.35,
+  "audio": {"target_lufs": -14, "highpass": 80, "denoise": false, "voice_eq": true},
+  "music": {"file": "../assets/sfx/ambient_bed.wav", "gain_db": -6, "duck": true},
+  "segments": [
+    {
+      "id": "hook_bos_trap",
+      "role": "hook",
+      "purpose": "Ayat paling kuat dari pertengahan rakaman dibawa ke depan — terus sentuh kesilapan biasa.",
+      "in": 21.5, "out": 24.3,
+      "zoom": {"from": 1.0, "to": 1.18, "cx": 0.55, "cy": 0.45, "dur": 2.6},
+      "fx": [{"type": "flash", "at": 0.0, "dur": 0.14, "amount": 0.15}],
+      "text": [
+        {"text": "BOS ni bukan\nsignal entry.", "style": "headline", "pos": "top", "start": 0.05, "end": 2.8},
+        {"text": "Ramai kena trap.", "style": "emphasis", "pos": "lower", "start": 1.0, "end": 2.8}
+      ],
+      "sfx": [{"file": "../assets/sfx/soft_impact.wav", "at": 0.0, "gain_db": -12}],
+      "transition_out": "cut"
+    },
+    {
+      "id": "context",
+      "role": "context",
+      "purpose": "Perkenalkan konteks XAUUSD M15 dengan tenang selepas hook.",
+      "in": 2.1, "out": 7.9,
+      "text": [{"text": "XAUUSD · M15", "style": "lower_third", "pos": [0.06, 0.80], "start": 0.2, "end": 3.0}],
+      "sfx": [{"file": "../assets/sfx/whoosh.wav", "at": 0.0, "gain_db": -16}]
+    },
+    {
+      "id": "structure",
+      "role": "main",
+      "purpose": "Tunjuk struktur pasaran langkah demi langkah — label muncul ikut penerangan.",
+      "in": 8.8, "out": 19.0,
+      "zoom": {"from": 1.0, "to": 1.10, "cx": 0.5, "cy": 0.5, "start": 0.0, "dur": 3.0},
+      "annotations": [
+        {"type": "label", "text": "HH", "x": 0.30, "y": 0.36, "start": 1.0, "end": 10.2},
+        {"type": "label", "text": "HL", "x": 0.42, "y": 0.55, "start": 2.4, "end": 10.2},
+        {"type": "level", "y": 0.40, "x0": 0.05, "x1": 0.95, "start": 4.0, "draw": 0.8, "label": "Previous high", "end": 10.2},
+        {"type": "zone", "x": 0.10, "y": 0.58, "w": 0.80, "h": 0.05, "start": 6.0, "draw": 0.7, "label": "Demand", "color": "bull", "end": 10.2},
+        {"type": "arrow", "dir": "up", "x": 0.66, "y": 0.50, "start": 8.0, "end": 10.2}
+      ],
+      "sfx": [
+        {"file": "../assets/sfx/ui_blip.wav", "at": 1.0, "gain_db": -18},
+        {"file": "../assets/sfx/ui_blip.wav", "at": 2.4, "gain_db": -18},
+        {"file": "../assets/sfx/whoosh.wav", "at": 4.0, "gain_db": -20}
+      ]
+    },
+    {
+      "id": "takeaway",
+      "role": "takeaway",
+      "purpose": "Tekankan pengajaran utama tanpa efek berlebihan.",
+      "in": 26.6, "out": 32.3,
+      "zoom": {"from": 1.08, "to": 1.0, "cx": 0.5, "cy": 0.5},
+      "text": [{"text": "Tunggu confirmation,\nbukan sekadar break.", "style": "headline", "pos": "center", "start": 0.3, "end": 5.6}],
+      "sfx": [{"file": "../assets/sfx/riser.wav", "at": 0.0, "gain_db": -22}]
+    },
+    {
+      "id": "ending",
+      "role": "ending",
+      "purpose": "Tutup dengan tenang; CTA ringkas sahaja.",
+      "in": 33.3, "out": 36.7,
+      "text": [{"text": "RamzlayerG", "style": "emphasis", "pos": "center", "start": 0.4, "end": 3.2}],
+      "transition_out": "dip"
+    }
+  ]
+}

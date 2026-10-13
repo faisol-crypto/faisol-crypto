@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+tests/out/
+assets/sfx/*.wav
+assets/music/*
+!assets/music/.gitkeep
+footage/
+out/
