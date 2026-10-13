@@ -332,12 +332,14 @@ class Diagram(Graphic):
 
 
 class Compare(Graphic):
-    HEIGHT = 400
+    """FROM chip (struck) -> one or more TO chips that pop in as each is named."""
+    HEIGHT = 505
 
-    def chip(self, text, filled):
-        fnt = font("display_bold", 52)
+    def chip(self, text, filled, size=48):
+        fnt = font("display_bold", size)
         tw = int(fnt.getlength(text))
-        cw, ch = tw + 70 * SS, 96 * SS
+        ch = int(size * 1.85) * SS
+        cw = tw + int(size * 1.25) * SS
         img = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
         d = ImageDraw.Draw(img)
         if filled:
@@ -360,36 +362,45 @@ class Compare(Graphic):
         f.paste(pnl, 20 * SS - pad, 20 * SS - pad)
         cx = w * SS // 2
         head = text_img(self.p.get("title", "TUKAR MARKET"), font("bold", 28), rgb(self.gold), tracking=5)
-        f.paste(head, cx - head.size[0] // 2, 62 * SS, k=ease_out(prog(t, 0, 0.3)))
-        a = self.chip(self.p["from"], False)
-        b = self.chip(self.p["to"], True)
-        row_y = 140 * SS
-        gap = 150 * SS
-        total = a.size[0] + gap + b.size[0]
-        ax = cx - total // 2
-        bx = ax + a.size[0] + gap
-        f.paste(a, ax, row_y, k=ease_out(prog(t, 0.1, 0.35)))
+        f.paste(head, cx - head.size[0] // 2, 58 * SS, k=ease_out(prog(t, 0, 0.3)))
         d = f.draw()
+        # row 1: the market being left
+        a = self.chip(self.p["from"], False, 46)
+        ay = 112 * SS
+        ax = cx - a.size[0] // 2
+        f.paste(a, ax, ay, k=ease_out(prog(t, 0.1, 0.35)))
         st = ease_in_out(prog(t, 0.45, 0.3))
         if st > 0:
-            my = row_y + a.size[1] // 2
-            d.line((ax + 20 * SS, my, ax + 20 * SS + (a.size[0] - 40 * SS) * st, my), fill=rgb(self.alert), width=7 * SS)
-        pa = ease_in_out(prog(t, 0.7, 0.4))
+            my = ay + a.size[1] // 2
+            d.line((ax + 18 * SS, my, ax + 18 * SS + (a.size[0] - 36 * SS) * st, my), fill=rgb(self.alert), width=7 * SS)
+        # connector arrow down
+        pa = ease_in_out(prog(t, 0.6, 0.35))
+        top = ay + a.size[1] + 14 * SS
         if pa > 0:
-            y0 = row_y + a.size[1] // 2
-            x0 = ax + a.size[0] + 28 * SS
-            x1 = x0 + (gap - 56 * SS) * pa
-            d.line((x0, y0, x1, y0), fill=rgb(self.gold), width=5 * SS)
-            if pa > 0.6:
-                d.polygon([(x1, y0 - 14 * SS), (x1 + 20 * SS, y0), (x1, y0 + 14 * SS)], fill=rgb(self.gold))
-        pb = prog(t, self.p.get("to_at", 1.1), 0.45)
-        if pb > 0:
-            s = max(0.01, back_out(pb))
-            bb = b.resize((max(1, int(b.size[0] * s)), max(1, int(b.size[1] * s))), Image.LANCZOS)
-            f.paste(bb, bx + (b.size[0] - bb.size[0]) // 2, row_y + (b.size[1] - bb.size[1]) // 2, k=clamp(pb * 2))
+            y1 = top + 44 * SS * pa
+            d.line((cx, top, cx, y1), fill=rgb(self.gold), width=4 * SS)
+            if pa > 0.7:
+                d.polygon([(cx - 12 * SS, y1 - 4 * SS), (cx + 12 * SS, y1 - 4 * SS), (cx, y1 + 14 * SS)], fill=rgb(self.gold))
+        # row 2: destinations, each pops in when named
+        tos = self.p["to"] if isinstance(self.p["to"], list) else [self.p["to"]]
+        ats = self.p.get("to_at", [1.1] * len(tos))
+        ats = ats if isinstance(ats, list) else [ats]
+        chips = [self.chip(tx, True, 46) for tx in tos]
+        gap = 26 * SS
+        total = sum(c.size[0] for c in chips) + gap * (len(chips) - 1)
+        bx = cx - total // 2
+        by = top + 74 * SS
+        for c, at in zip(chips, ats):
+            pb = prog(t, at, 0.45)
+            if pb > 0:
+                s = max(0.01, back_out(pb))
+                cc = c.resize((max(1, int(c.size[0] * s)), max(1, int(c.size[1] * s))), Image.LANCZOS)
+                f.paste(cc, bx + (c.size[0] - cc.size[0]) // 2, by + (c.size[1] - cc.size[1]) // 2, k=clamp(pb * 2))
+            bx += c.size[0] + gap
         if self.p.get("note"):
             note = text_img(self.p["note"], font("semibold", 40), rgb(self.white))
-            f.paste(reveal(note, prog(t, self.p.get("note_at", 2.0), 0.45)), cx - note.size[0] // 2, row_y + 140 * SS)
+            f.paste(reveal(note, prog(t, self.p.get("note_at", 2.0), 0.45)), cx - note.size[0] // 2,
+                    by + chips[0].size[1] + 26 * SS)
         return f.final(k, off)
 
 
