@@ -41,8 +41,17 @@ def probe(path):
             "video": None, "audio": None}
     for s in data["streams"]:
         if s["codec_type"] == "video" and info["video"] is None:
+            rot = 0
+            for sd in s.get("side_data_list", []):
+                if "rotation" in sd:
+                    rot = int(sd["rotation"])
+            w, h = int(s["width"]), int(s["height"])
+            if abs(rot) % 180 == 90:  # phone footage: ffmpeg auto-rotates on decode
+                w, h = h, w
             info["video"] = {
-                "width": int(s["width"]), "height": int(s["height"]),
+                "width": w, "height": h, "rotation": rot,
+                "hdr": s.get("color_transfer") in ("arib-std-b67", "smpte2084"),
+                "color_transfer": s.get("color_transfer"),
                 "fps": _ratio(s.get("avg_frame_rate", "0/1")),
                 "r_fps": _ratio(s.get("r_frame_rate", "0/1")),
                 "codec": s.get("codec_name"), "pix_fmt": s.get("pix_fmt"),
@@ -53,6 +62,14 @@ def probe(path):
                              "sample_rate": int(s.get("sample_rate", 0)),
                              "channels": int(s.get("channels", 0))}
     return info
+
+
+def sdr_filter(video_info):
+    """Tone-map HLG/PQ (iPhone HDR) to SDR BT.709, or a no-op for SDR sources."""
+    if not video_info or not video_info.get("hdr"):
+        return "format=yuv420p"
+    return ("zscale=t=linear:npl=203,format=gbrpf32le,zscale=p=bt709,"
+            "tonemap=mobius:param=0.3:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
 
 
 def _ratio(text):

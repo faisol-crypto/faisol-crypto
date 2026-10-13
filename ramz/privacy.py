@@ -3,22 +3,29 @@
 Doing privacy first means later zooms, crops and transitions can never expose
 an unprotected frame.
 
-Detection: OpenCV Haar (frontal + both profiles) every frame, then a tracker
-that smooths the box (no jumping mask), pads it generously and holds it for a
-while after detection is lost (turned heads, motion blur). Manual keyframed
-regions from a JSON file are always applied on top, for the cases automatic
-detection misses.
+  1. Detect  — OpenCV Haar (frontal + both profiles) on every Nth frame.
+  2. Track   — gaps are filled by interpolating between detections in BOTH
+               directions (no lag when the head moves, no hole when a turned
+               head is missed), then smoothed with a centred window so the
+               mask never jumps. Size uses a rolling max: grows at once,
+               shrinks slowly, and widens while the head is moving.
+  3. Render  — feathered blur / mosaic / solid disc into the mask. HDR phone
+               footage (HLG/PQ) is tone-mapped to SDR and VFR becomes CFR.
+  4. Audit   — for every frame with a detection: (a) coverage — the face
+               box must lie fully inside the mask; (b) detail leak — the
+               Laplacian (edge) energy left inside the face box after blurring,
+               relative to the original. Eyes/nose/mouth = high detail; a
+               well-blurred face keeps only a few percent. (A plain face
+               detector is NOT used as audit: it still finds the head shape in
+               any blur, so it cannot tell protected from exposed.)
 
-Methods:
-  soft    — heavy feathered gaussian blur (default, looks natural)
-  pixel   — mosaic + blur, stronger identity protection
-  solid   — brand-coloured feathered disc, maximum protection
+Manual keyframed regions (--regions) are always applied on top.
 
-Writes <output>.privacy.json with coverage stats and the frame ranges that
-need a human check. ramz.render refuses privacy_required plans without it.
+Writes <output>.privacy.json. ramz.render refuses privacy_required plans
+without it, and warns if it lists anything for review.
 
 Usage:
-  python3 -m ramz.privacy raw.mp4 -o protected.mp4 [--method soft] [--regions manual.json]
+  python3 -m ramz.privacy raw.mov -o protected.mp4 [--method soft|pixel|solid] [--regions manual.json]
   manual.json: [{"t": 0.0, "x": 0.4, "y": 0.1, "w": 0.2, "h": 0.25}, {"t": 4.0, ...}]
 """
 import argparse
@@ -27,59 +34,139 @@ import os
 import subprocess
 import sys
 
-from .common import probe, require_tools
+from .common import probe, require_tools, sdr_filter
 
 
 def _cv():
     try:
-        import cv2  # noqa: F401
-        import numpy  # noqa: F401
+        import cv2
+        import numpy as np
     except ImportError:
         sys.exit("[ramz] Perlukan OpenCV: pip install 'opencv-python-headless<5' numpy")
-    import cv2
-    import numpy as np
     return cv2, np
 
 
-class FaceTracker:
-    """Smoothed single/multi-face box tracker with hold-after-loss."""
+class Detector:
+    def __init__(self, cv2, width, detect_width=640):
+        self.cv2 = cv2
+        self.s = min(1.0, detect_width / width)
+        hc = cv2.data.haarcascades
+        self.frontal = cv2.CascadeClassifier(os.path.join(hc, "haarcascade_frontalface_default.xml"))
+        self.profile = cv2.CascadeClassifier(os.path.join(hc, "haarcascade_profileface.xml"))
 
-    def __init__(self, fps, hold_s=1.2, smooth=0.35):
-        self.tracks = []  # each: dict(box=[cx,cy,w,h], miss=int)
-        self.hold = int(hold_s * fps)
-        self.smooth = smooth
+    def __call__(self, frame, min_frac=0.06, neighbors=5):
+        cv2, s = self.cv2, self.s
+        small = cv2.resize(frame, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
+        gray = cv2.equalizeHist(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY))
+        mn = max(24, int(min(gray.shape) * min_frac))
+        dets = list(self.frontal.detectMultiScale(gray, 1.12, neighbors, minSize=(mn, mn)))
+        dets += list(self.profile.detectMultiScale(gray, 1.12, neighbors, minSize=(mn, mn)))
+        gw = gray.shape[1]
+        for (x, y, w, h) in self.profile.detectMultiScale(cv2.flip(gray, 1), 1.12, neighbors, minSize=(mn, mn)):
+            dets.append((gw - x - w, y, w, h))
+        # centre boxes (cx, cy, w, h) in full-res pixels
+        return [((x + w / 2) / s, (y + h / 2) / s, w / s, h / s) for (x, y, w, h) in dets]
 
-    @staticmethod
-    def _iou_center(a, b):
-        dx, dy = abs(a[0] - b[0]), abs(a[1] - b[1])
-        return dx < max(a[2], b[2]) * 0.8 and dy < max(a[3], b[3]) * 0.8
 
-    def update(self, detections):
-        used = set()
-        for tr in self.tracks:
-            match = None
-            for i, d in enumerate(detections):
-                if i not in used and self._iou_center(tr["box"], d):
-                    match = i
-                    break
-            if match is None:
-                tr["miss"] += 1
-                # grow a little while lost so a moving head stays covered
-                tr["box"][2] *= 1.01
-                tr["box"][3] *= 1.01
-            else:
-                used.add(match)
-                a = self.smooth
-                tr["box"] = [tr["box"][k] * (1 - a) + detections[match][k] * a for k in range(4)]
-                # never shrink faster than it grows: protection over aesthetics
-                tr["box"][2] = max(tr["box"][2], detections[match][2])
-                tr["box"][3] = max(tr["box"][3], detections[match][3])
-                tr["miss"] = 0
-        for i, d in enumerate(detections):
-            if i not in used:
-                self.tracks.append({"box": list(d), "miss": 0})
-        self.tracks = [t for t in self.tracks if t["miss"] <= self.hold]
-        return [t["box"] for t in self.tracks], any(t["miss"] > 0 for t in self.tracks)
+def frames(path, video, fps):
+    """Decode to BGR frames at constant fps, tone-mapping HDR to SDR."""
+    import numpy as np
+    W, H = video["width"], video["height"]
+    proc = subprocess.Popen(["ffmpeg", "-v", "error", "-i", path, "-vf", f"{sdr_filter(video)},fps={fps}",
+                             "-f", "rawvideo", "-pix_fmt", "bgr24", "-"], stdout=subprocess.PIPE)
+    size = W * H * 3
+    while True:
+        buf = proc.stdout.read(size)
+        if len(buf) < size:
+            break
+        yield np.frombuffer(buf, np.uint8).reshape(H, W, 3).copy()
+    proc.wait()
+
+
+def pick_primary(dets, prev):
+    """Keep the detection nearest the previous face (else the largest)."""
+    if not dets:
+        return None
+    if prev is not None:
+        return min(dets, key=lambda d: (d[0] - prev[0]) ** 2 + (d[1] - prev[1]) ** 2)
+    return max(dets, key=lambda d: d[2] * d[3])
+
+
+def build_track(raw, fps, max_gap_s, smooth_s):
+    """Interpolate gaps between detections both ways, then smooth.
+
+    Returns per-frame boxes and the time ranges filled over gaps longer than
+    max_gap_s (flagged for review).
+    """
+    import numpy as np
+    n = len(raw)
+    idx = [i for i in range(n) if raw[i] is not None]
+    if not idx:
+        return [None] * n, [[0.0, round(n / fps, 2)]] if n else []
+    arr = np.full((n, 4), np.nan)
+    for i in idx:
+        arr[i] = raw[i]
+    # drop isolated outliers: a detection far from both neighbours that agree
+    for k in range(1, len(idx) - 1):
+        a, b, c = arr[idx[k - 1]], arr[idx[k]], arr[idx[k + 1]]
+        mid = (a + c) / 2
+        if np.hypot(*(b[:2] - mid[:2])) > max(a[2], c[2]) * 1.2 and np.hypot(*(a[:2] - c[:2])) < a[2] * 0.6:
+            arr[idx[k]] = np.nan
+    idx = [i for i in range(n) if not np.isnan(arr[i, 0])]
+    t = np.arange(n)
+    out = np.empty((n, 4))
+    for c in range(4):
+        out[:, c] = np.interp(t, idx, arr[idx, c])  # edges hold first/last value
+    long_gaps = [[round(a / fps, 2), round(b / fps, 2)] for a, b in zip(idx, idx[1:]) if (b - a) / fps > max_gap_s]
+    if idx[0] / fps > max_gap_s:
+        long_gaps.insert(0, [0.0, round(idx[0] / fps, 2)])
+    if (n - 1 - idx[-1]) / fps > max_gap_s:
+        long_gaps.append([round(idx[-1] / fps, 2), round((n - 1) / fps, 2)])
+
+    k = max(1, int(smooth_s * fps)) | 1
+    pad = k // 2
+    pos = np.pad(out[:, :2], ((pad, pad), (0, 0)), mode="edge")
+    ker = np.ones(k) / k
+    sm = np.stack([np.convolve(pos[:, c], ker, mode="valid") for c in range(2)], axis=1)
+    wpad = pad * 2
+    size = np.pad(out[:, 2:], ((wpad, wpad), (0, 0)), mode="edge")
+    sz = np.stack([np.array([size[i:i + 2 * wpad + 1, c].max() for i in range(n)]) for c in range(2)], axis=1)
+    padded = np.pad(out[:, :2], ((pad, pad), (0, 0)), mode="edge")
+    travel = np.array([np.ptp(padded[i:i + k, 0]) + np.ptp(padded[i:i + k, 1]) for i in range(n)])
+    sz = sz + travel[:, None] * 0.5  # moving head -> wider mask
+    return [tuple(map(float, (sm[i, 0], sm[i, 1], sz[i, 0], sz[i, 1]))) for i in range(n)], long_gaps
+
+
+def detail(cv2, np, frame, box):
+    """Edge energy (Laplacian variance) inside the central face box."""
+    cx, cy, w, h = box
+    H, W = frame.shape[:2]
+    x0, x1 = int(max(0, cx - w * 0.35)), int(min(W, cx + w * 0.35))
+    y0, y1 = int(max(0, cy - h * 0.35)), int(min(H, cy + h * 0.4))
+    if x1 - x0 < 8 or y1 - y0 < 8:
+        return 0.0
+    g = cv2.cvtColor(frame[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
+    return float(cv2.Laplacian(g, cv2.CV_64F).var()) + 1e-6
+
+
+def covered_by(box, masks):
+    """True if the face box (eyes-to-chin core) is inside the solid part of some mask."""
+    cx, cy, w, h = box
+    pts = [(cx + dx * w * 0.42, cy + dy * h * 0.45) for dx in (-1, 0, 1) for dy in (-1, 0, 1)]
+    for (mx, my, ax, ay) in masks:
+        if all(((px - mx) / ax) ** 2 + ((py - my) / ay) ** 2 <= 0.9 for px, py in pts):
+            return True
+    return False
+
+
+def to_ranges(times, join=0.5):
+    out = []
+    for t in times:
+        if out and t - out[-1][1] <= join:
+            out[-1][1] = t
+        else:
+            out.append([t, t])
+    return out
 
 
 def interp_regions(regions, t):
@@ -97,9 +184,7 @@ def interp_regions(regions, t):
                 r = {key: a[key] + (b[key] - a[key]) * k for key in ("x", "y", "w", "h")}
                 r["enabled"] = a.get("enabled", True)
                 break
-    if not r.get("enabled", True):
-        return None
-    return r
+    return r if r.get("enabled", True) else None
 
 
 def apply_masks(cv2, np, frame, masks, method, col):
@@ -128,10 +213,11 @@ def apply_masks(cv2, np, frame, masks, method, col):
         mosaic = cv2.resize(roi, (max(1, rw // blk), max(1, rh // blk)), interpolation=cv2.INTER_AREA)
         cover = cv2.GaussianBlur(cv2.resize(mosaic, (rw, rh), interpolation=cv2.INTER_NEAREST), (blk | 1, blk | 1), 0)
     else:
-        # downscale -> heavy blur -> upscale: strong, smooth and cheap
+        # downscale -> heavy blur twice -> upscale: strong, smooth and cheap
         k = max(3, int(min(W, H) * 0.09) // 4) | 1
         small = cv2.resize(roi, (max(1, rw // 4), max(1, rh // 4)), interpolation=cv2.INTER_AREA)
-        cover = cv2.resize(cv2.GaussianBlur(small, (k, k), 0), (rw, rh), interpolation=cv2.INTER_LINEAR)
+        small = cv2.GaussianBlur(cv2.GaussianBlur(small, (k, k), 0), (k, k), 0)
+        cover = cv2.resize(small, (rw, rh), interpolation=cv2.INTER_LINEAR)
     frame[y0:y1, x0:x1] = (roi * (1 - alpha) + cover * alpha).astype(np.uint8)
     return frame
 
@@ -141,124 +227,115 @@ def main():
     ap.add_argument("input")
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--method", choices=["soft", "pixel", "solid"], default="soft")
-    ap.add_argument("--pad", type=float, default=0.45, help="padding around face box (fraction)")
+    ap.add_argument("--pad", type=float, default=0.55, help="padding around face box (fraction)")
     ap.add_argument("--regions", help="manual keyframed regions JSON (normalised coords)")
-    ap.add_argument("--hold", type=float, default=1.2, help="seconds to keep mask after detection lost")
-    ap.add_argument("--no-detect", action="store_true", help="manual --regions only (fixed desk setups, fastest)")
-    ap.add_argument("--detect-every", type=int, default=3, help="run detector every N frames (tracker fills gaps)")
+    ap.add_argument("--no-detect", action="store_true", help="manual --regions only (fixed setups, fastest)")
+    ap.add_argument("--detect-every", type=int, default=2, help="run detector every N frames")
     ap.add_argument("--detect-width", type=int, default=640, help="detection runs at this width for speed")
+    ap.add_argument("--max-gap", type=float, default=0.8, help="gaps longer than this (s) are flagged for review")
+    ap.add_argument("--smooth", type=float, default=0.25, help="position smoothing window (s)")
     ap.add_argument("--color", default="#0B0F14", help="disc colour for --method solid")
+    ap.add_argument("--fps", type=float, default=30.0, help="output constant frame rate")
     ap.add_argument("--crf", type=int, default=14, help="near-lossless intermediate")
+    ap.add_argument("--no-audit", action="store_true")
+    ap.add_argument("--leak-ratio", type=float, default=0.15,
+                    help="max fraction of facial edge detail allowed to survive the blur")
     args = ap.parse_args()
 
     require_tools()
     cv2, np = _cv()
-    info = probe(args.input)
-    v = info["video"]
-    W, H, fps = v["width"], v["height"], v["fps"] or 30.0
-
-    cascades = [cv2.CascadeClassifier(os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml"))]
-    profile = cv2.CascadeClassifier(os.path.join(cv2.data.haarcascades, "haarcascade_profileface.xml"))
-    regions = None
+    v = probe(args.input)["video"]
+    W, H = v["width"], v["height"]
+    fps = float(args.fps)  # constant frame rate from here on (phones record VFR)
     if args.no_detect and not args.regions:
         sys.exit("[ramz] --no-detect perlukan --regions.")
+    regions = None
     if args.regions:
         with open(args.regions, encoding="utf-8") as fh:
             regions = sorted(json.load(fh), key=lambda r: r["t"])
 
-    dec = subprocess.Popen(["ffmpeg", "-v", "error", "-i", args.input, "-f", "rawvideo", "-pix_fmt", "bgr24", "-"],
-                           stdout=subprocess.PIPE)
-    enc_cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{W}x{H}",
-               "-r", f"{fps}", "-i", "-", "-i", args.input, "-map", "0:v", "-map", "1:a?",
-               "-c:v", "libx264", "-preset", "medium", "-crf", str(args.crf), "-pix_fmt", "yuv420p",
-               "-c:a", "copy", args.output]
-    enc = subprocess.Popen(enc_cmd, stdin=subprocess.PIPE)
+    track, long_gaps, runs, hits, raw = None, [], 0, 0, []
+    if not args.no_detect:
+        print("[ramz] privacy 1/3: detect", flush=True)
+        detect = Detector(cv2, W, args.detect_width)
+        prev = None
+        for i, frame in enumerate(frames(args.input, v, fps)):
+            box = None
+            if i % max(1, args.detect_every) == 0:
+                runs += 1
+                box = pick_primary(detect(frame), prev)
+                if box is not None:
+                    hits += 1
+                    prev = box
+            raw.append(box)
+        track, long_gaps = build_track(raw, fps, args.max_gap, args.smooth)
 
-    tracker = FaceTracker(fps / max(1, args.detect_every), hold_s=args.hold)
-    holding = False
-    frame_bytes = W * H * 3
-    s = min(1.0, args.detect_width / W)
-    min_face = max(24, int(min(W, H) * s * 0.06))
+    print("[ramz] privacy 2/3: render", flush=True)
+    enc = subprocess.Popen(
+        ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{W}x{H}",
+         "-r", f"{fps}", "-i", "-", "-i", args.input, "-map", "0:v", "-map", "1:a:0?",
+         "-c:v", "libx264", "-preset", "medium", "-crf", str(args.crf), "-pix_fmt", "yuv420p",
+         "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",
+         "-c:a", "aac", "-b:a", "256k", "-shortest", args.output], stdin=subprocess.PIPE)
     col = tuple(int(args.color.lstrip("#")[i:i + 2], 16) for i in (4, 2, 0))  # BGR
-    n = covered = detected = runs = 0
-    lost_runs, run_start = [], None
-
-    while True:
-        buf = dec.stdout.read(frame_bytes)
-        if len(buf) < frame_bytes:
-            break
-        frame = np.frombuffer(buf, np.uint8).reshape(H, W, 3).copy()
-        t = n / fps
-        if not args.no_detect and n % max(1, args.detect_every) == 0:
-            small = cv2.resize(frame, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
-            gray = cv2.equalizeHist(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY))
-            dets = []
-            for c in cascades:
-                dets += list(c.detectMultiScale(gray, 1.12, 5, minSize=(min_face, min_face)))
-            dets += list(profile.detectMultiScale(gray, 1.12, 5, minSize=(min_face, min_face)))
-            flipped = cv2.flip(gray, 1)
-            for (x, y, w, h) in profile.detectMultiScale(flipped, 1.12, 5, minSize=(min_face, min_face)):
-                dets.append((gray.shape[1] - x - w, y, w, h))
-            # merge overlapping detections into centre boxes in full-res pixels
-            boxes = []
-            for (x, y, w, h) in dets:
-                b = [(x + w / 2) / s, (y + h / 2) / s, w / s, h / s]
-                if not any(FaceTracker._iou_center(b, o) for o in boxes):
-                    boxes.append(b)
-            runs += 1
-            if boxes:
-                detected += 1
-            tracked, holding = tracker.update(boxes)
-        else:
-            tracked = [tr["box"] for tr in tracker.tracks]
-
+    covered = total = 0
+    bad_cover, leaks, ratios = [], [], []
+    for i, frame in enumerate(frames(args.input, v, fps)):
         masks = []
-        for (cx, cy, w, h) in tracked:
-            pw, ph = w * (1 + args.pad), h * (1 + args.pad) * 1.15  # taller: hair/chin
-            masks.append((cx, cy - h * 0.05, pw / 2, ph / 2))
-        r = interp_regions(regions, t)
+        if track and i < len(track) and track[i] is not None:
+            cx, cy, w, h = track[i]
+            masks.append((cx, cy - h * 0.06, w * (1 + args.pad) / 2, h * (1 + args.pad) * 1.2 / 2))
+        r = interp_regions(regions, i / fps)
         if r:
             masks.append(((r["x"] + r["w"] / 2) * W, (r["y"] + r["h"] / 2) * H, r["w"] * W / 2, r["h"] * H / 2))
-
+        det = raw[i] if i < len(raw) else None
+        before = detail(cv2, np, frame, det) if det and not args.no_audit else None
         if masks:
             covered += 1
             frame = apply_masks(cv2, np, frame, masks, args.method, col)
-
-        # flag stretches where a face was being tracked but detection dropped out
-        risky = holding
-        if risky and run_start is None:
-            run_start = t
-        elif not risky and run_start is not None:
-            if t - run_start > 0.2:
-                lost_runs.append([round(run_start, 2), round(t, 2)])
-            run_start = None
+        if before:
+            if not covered_by(det, masks):
+                bad_cover.append(round(i / fps, 2))
+            ratio = detail(cv2, np, frame, det) / before
+            ratios.append(ratio)
+            if ratio > args.leak_ratio:
+                leaks.append(round(i / fps, 2))
         enc.stdin.write(frame.tobytes())
-        n += 1
-        if n % int(fps * 5) == 0:
-            print(f"[ramz] privacy {t:6.1f}s / {info['duration']:.1f}s", flush=True)
-
-    if run_start is not None:
-        lost_runs.append([round(run_start, 2), round(n / fps, 2)])
+        total += 1
     enc.stdin.close()
     enc.wait()
-    dec.wait()
     if enc.returncode != 0:
         sys.exit("[ramz] Encode privacy gagal.")
 
+    leak_ranges, cover_ranges = to_ranges(leaks), to_ranges(bad_cover)
+
     report = {
-        "source": os.path.abspath(args.input), "method": args.method, "frames": n,
-        "detector_runs": runs, "detector_hits": detected, "frames_masked": covered,
-        "manual_regions": bool(regions),
-        "review_needed": lost_runs,
-        "note": ("Semak setiap julat dalam review_needed secara manual (kepala berpaling, gerakan pantas, "
-                 "pencahayaan). Tambah --regions untuk tutup jurang. Detection automatik bukan jaminan 100%."),
+        "source": os.path.abspath(args.input), "method": args.method, "fps": fps, "frames": total,
+        "hdr_tonemapped": bool(v.get("hdr")), "detector_runs": runs, "detector_hits": hits,
+        "frames_masked": covered, "manual_regions": bool(regions),
+        "long_gaps_interpolated": long_gaps,
+        "audit": {
+            "frames_checked": len(ratios),
+            "detail_left_median": round(float(np.median(ratios)), 4) if ratios else None,
+            "detail_left_max": round(float(np.max(ratios)), 4) if ratios else None,
+            "leak_threshold": args.leak_ratio,
+            "detail_leaks": leak_ranges,
+            "coverage_failures": cover_ranges,
+        },
+        "review_needed": long_gaps + leak_ranges + cover_ranges,
+        "note": ("Audit: setiap frame yang ada wajah dikesan disemak — kotak wajah mesti di dalam mask, dan "
+                 "butiran (edge) yang tinggal mesti di bawah ambang. Julat dalam review_needed mesti ditonton "
+                 "manual. Pengesanan automatik bukan jaminan 100% — wajah yang tidak pernah dikesan tidak "
+                 "dapat diaudit."),
     }
     side = os.path.splitext(args.output)[0] + ".privacy.json"
     with open(side, "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=2, ensure_ascii=False)
     print(f"[ramz] SIAP: {args.output}")
-    print(f"[ramz] wajah dikesan {detected}/{runs} detection, mask aktif {covered}/{n} frame; "
-          f"{len(lost_runs)} julat perlu semakan -> {side}")
+    med = f"{np.median(ratios) * 100:.1f}%" if ratios else "-"
+    print(f"[ramz] wajah dikesan {hits}/{runs} detection, mask {covered}/{total} frame, "
+          f"{len(long_gaps)} jurang panjang; audit {len(ratios)} frame: butiran tinggal median {med}, "
+          f"{len(leaks)} leak, {len(bad_cover)} liputan gagal -> {side}")
 
 
 if __name__ == "__main__":

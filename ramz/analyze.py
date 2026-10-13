@@ -61,11 +61,18 @@ def transcribe(path, model_size="small"):
         from faster_whisper import WhisperModel
     except ImportError:
         return None
+    import subprocess
+    import numpy as np
+    # decode ourselves: avoids PyAV/container quirks with phone .MOV files
+    pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-map", "0:a:0", "-ac", "1", "-ar", "16000",
+                          "-f", "f32le", "-"], capture_output=True).stdout
     model = WhisperModel(model_size, compute_type="int8")
-    segs, _ = model.transcribe(path, language="ms", word_timestamps=True, vad_filter=True)
+    segs, _ = model.transcribe(np.frombuffer(pcm, np.float32), language="ms", word_timestamps=True,
+                               beam_size=5)
     lines = []
     for s in segs:
-        words = [{"w": w.word.strip(), "start": round(w.start, 2), "end": round(w.end, 2)} for w in (s.words or [])]
+        words = [{"w": w.word.strip(), "s": round(w.start, 2), "e": round(w.end, 2), "p": round(w.probability, 2)}
+                 for w in (s.words or [])]
         fillers = [w for w in words if re.sub(r"[^\w]", "", w["w"].lower()) in FILLERS]
         text = s.text.strip()
         score = sum(1 for m in HOOK_MARKERS if m in text.lower()) + (1 if "?" in text else 0)
@@ -80,7 +87,7 @@ def main():
     ap.add_argument("--out", help="output directory (default: beside input)")
     ap.add_argument("--every", type=float, default=0, help="contact sheet interval seconds (auto)")
     ap.add_argument("--transcribe", action="store_true", help="use faster-whisper if installed")
-    ap.add_argument("--model", default="small")
+    ap.add_argument("--model", default="medium", help="whisper size; medium is far better for Malay")
     args = ap.parse_args()
     require_tools()
 

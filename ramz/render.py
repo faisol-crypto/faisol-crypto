@@ -279,7 +279,7 @@ class Renderer:
         if ac.get("highpass", 80):
             a.append(f"highpass=f={ac.get('highpass', 80)}")
         if ac.get("denoise", False):
-            a.append("afftdn=nf=-28:tn=1")
+            a.append(f"afftdn=nf={ac.get('denoise_nf', -45)}:tn=1")
         if ac.get("voice_eq", True):
             a.append("equalizer=f=250:t=q:w=1.2:g=-1.5,equalizer=f=3200:t=q:w=1:g=1.5")
         if seg.get("gain_db"):
@@ -399,6 +399,7 @@ class Renderer:
         offsets = [sum(durs[:i]) for i in range(len(durs))]
         total = sum(durs)
 
+        os.makedirs(os.path.dirname(self.out_path) or ".", exist_ok=True)
         lst = os.path.join(self.tmp, "concat.txt")
         with open(lst, "w") as fh:
             fh.writelines(f"file '{c}'\n" for c in clips)
@@ -410,8 +411,18 @@ class Renderer:
         mix = self.mix_audio(master, offsets, total)
         norm = self.loudnorm(mix)
 
-        os.makedirs(os.path.dirname(self.out_path) or ".", exist_ok=True)
         vf = []
+        cap = self.plan.get("captions")
+        if cap:
+            from .captions import build as build_captions
+            ass, review = build_captions(cap, resolve(cap["transcript"], self.base), segs, offsets, durs,
+                                         self.W, self.H, cap.get("font", "Inter"),
+                                         os.path.splitext(self.out_path)[0])
+            if review:
+                self.warnings.append(f"Caption: {len(review)} perkataan perlu disemak "
+                                     f"({os.path.splitext(self.out_path)[0]}.captions_review.md).")
+            p = ass.replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
+            vf.append(f"ass='{p}':fontsdir='{os.path.dirname(self.font('headline'))}'")
         subs = self.plan.get("subtitles")
         if subs:
             subs_path = resolve(subs if isinstance(subs, str) else subs["file"], self.base)

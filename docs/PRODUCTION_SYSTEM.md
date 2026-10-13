@@ -104,7 +104,11 @@ Anotasi chart (`annotations`) — koordinat dinormalkan pada kanvas output:
 
 ## 7. Privasi wajah
 
-`ramz.privacy`: pengesanan Haar (depan + profil kiri/kanan) → tracker licin (mask tidak melompat, tidak mengecil mendadak) → padding besar → tahan mask 1.2s selepas wajah hilang → blur berbulu (feathered).
+`ramz.privacy` (dua laluan):
+1. Pengesanan Haar (depan + profil kiri/kanan) pada setiap frame ke-2.
+2. Jurang antara pengesanan diisi dengan interpolasi **dua arah** (tiada lag bila kepala bergerak, tiada lubang bila wajah berpaling), kemudian dilicinkan secara berpusat; saiz mask membesar serta-merta, mengecil perlahan, dan melebar bila kepala bergerak.
+3. Blur berbulu (feathered). Footage HDR iPhone (HLG/PQ) ditukar ke SDR BT.709 dan VFR ditukar ke 30fps CFR.
+4. Audit: untuk setiap frame yang ada wajah dikesan — kotak wajah mesti berada di dalam mask, dan butiran (edge) yang tinggal selepas blur mesti < 15% daripada asal.
 
 - `--method soft` (default) · `pixel` (lebih kuat) · `solid` (paling selamat).
 - `--regions manual.json` — kawasan keyframe manual sentiasa digunakan di atas pengesanan automatik. Untuk set-up meja yang tetap, `--no-detect --regions` paling pantas dan paling boleh dipercayai.
@@ -113,7 +117,9 @@ Anotasi chart (`annotations`) — koordinat dinormalkan pada kanvas output:
 
 ## 8. Pembersihan percakapan
 
-- `analyze` menyenaraikan jeda ≥ 0.6s dan (jika `faster-whisper` dipasang) filler words dengan timestamp.
+- `analyze --transcribe` (Whisper `medium`, Bahasa Melayu) memberi transkrip peringkat perkataan dengan keyakinan setiap perkataan, jeda, dan filler words.
+- Potongan ditentukan dengan sempadan pertuturan sebenar (timestamp perkataan + envelope tenaga audio), bukan anggaran.
+- Caption automatik (`captions` dalam plan) dipetakan semula ke timeline akhir selepas potongan. Perkataan yang tidak jelas **tidak dipaparkan** sehingga disahkan (`omit`), pembetulan disenaraikan (`replace`), dan semuanya ditulis ke `*.captions_review.md`.
 - Potong dengan memecahkan rakaman kepada segment; simpan ~0.25s jeda natural.
 - Kekalkan intonasi, loghat Melayu Malaysia, penekanan dan rentak. Jangan buat terlalu laju/sempurna.
 - Tiada AI voice tanpa arahan khusus. Ayat yang tidak jelas → tanda untuk pengesahan, jangan reka.
@@ -136,6 +142,6 @@ Supaya jujur tentang had:
 
 - Tiada akses langsung ke Google Drive — muat turun footage ke `footage/` dahulu.
 - Speed ramp, whip pan, parallax, light leak, particles, tracking highlights → editor/plugin luar.
-- Transkrip automatik memerlukan `pip install faster-whisper` + muat turun model.
+- Transkrip automatik memerlukan `pip install faster-whisper` + muat turun model (~1.5GB untuk `medium`).
 - Pemotongan filler word dibuat melalui segment dalam plan (separuh manual), bukan auto-delete.
 - Pengesanan wajah Haar boleh terlepas wajah sisi/gelap/kabur — sebab itu ada `--regions` dan laporan semakan.
