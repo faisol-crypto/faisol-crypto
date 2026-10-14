@@ -187,7 +187,7 @@ def interp_regions(regions, t):
     return r if r.get("enabled", True) else None
 
 
-def apply_masks(cv2, np, frame, masks, method, col):
+def apply_masks(cv2, np, frame, masks, method, col, strength=1.0):
     """Blend the cover into the elliptical masks, working only inside their ROI."""
     H, W = frame.shape[:2]
     feather = int(max(9, min(W, H) * 0.025)) | 1
@@ -214,7 +214,7 @@ def apply_masks(cv2, np, frame, masks, method, col):
         cover = cv2.GaussianBlur(cv2.resize(mosaic, (rw, rh), interpolation=cv2.INTER_NEAREST), (blk | 1, blk | 1), 0)
     else:
         # downscale -> heavy blur twice -> upscale: strong, smooth and cheap
-        k = max(3, int(min(W, H) * 0.09) // 4) | 1
+        k = max(3, int(min(W, H) * 0.09 * strength) // 4) | 1
         small = cv2.resize(roi, (max(1, rw // 4), max(1, rh // 4)), interpolation=cv2.INTER_AREA)
         small = cv2.GaussianBlur(cv2.GaussianBlur(small, (k, k), 0), (k, k), 0)
         cover = cv2.resize(small, (rw, rh), interpolation=cv2.INTER_LINEAR)
@@ -227,6 +227,7 @@ def main():
     ap.add_argument("input")
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--method", choices=["soft", "pixel", "solid"], default="soft")
+    ap.add_argument("--strength", type=float, default=1.0, help="blur kernel multiplier for --method soft")
     ap.add_argument("--pad", type=float, default=0.55, help="padding around face box (fraction)")
     ap.add_argument("--regions", help="manual keyframed regions JSON (normalised coords)")
     ap.add_argument("--no-detect", action="store_true", help="manual --regions only (fixed setups, fastest)")
@@ -292,7 +293,7 @@ def main():
         before = detail(cv2, np, frame, det) if det and not args.no_audit else None
         if masks:
             covered += 1
-            frame = apply_masks(cv2, np, frame, masks, args.method, col)
+            frame = apply_masks(cv2, np, frame, masks, args.method, col, args.strength)
         if before:
             if not covered_by(det, masks):
                 bad_cover.append(round(i / fps, 2))

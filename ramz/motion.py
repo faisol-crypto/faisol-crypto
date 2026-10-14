@@ -13,6 +13,8 @@ Graphic types (all text comes from the plan — nothing is invented here):
   statement  — two-line statement, second line large + light sweep
   keyword    — compact single-phrase panel
   endcard    — brand line + question + call to action
+  chips      — heading + row of chips that pop in as each is named, optional note
+  checklist  — heading + 2x2 grid of items; each ticks when it is spoken
 """
 import math
 import os
@@ -453,8 +455,8 @@ class EndCard(Graphic):
         pnl, pad = self.panel_layer(pw, ph)
         f.paste(pnl, 20 * SS - pad, 20 * SS - pad, k=ease_out(prog(t, 0, 0.3)))
         cx = w * SS // 2
-        q = text_img(self.p["question"], font("semibold", 54), rgb(self.white))
-        cta = text_img(self.p["cta"], font("display", 108), rgb(self.gold))
+        q = text_img(self.p["question"], font("semibold", self.p.get("size1", 54)), rgb(self.white))
+        cta = text_img(self.p["cta"], font("display", self.p.get("size2", 108)), rgb(self.gold))
         cta = sweep(cta, prog(t, 1.0, 0.7))
         top = 70 * SS
         f.paste(reveal(q, prog(t, 0.05, 0.4)), cx - q.size[0] // 2, top)
@@ -463,7 +465,84 @@ class EndCard(Graphic):
         return f.final(k, off)
 
 
-TYPES = {"title": Title, "strike": Strike, "diagram": Diagram, "compare": Compare,
+class Chips(Compare):
+    """Heading + chips that pop in one by one as each is named (no 'from' row)."""
+    HEIGHT = 290
+
+    def frame(self, t):
+        x, y, w, h = self.region
+        f = Frame(w, h)
+        k, off = envelope(t, self.dur)
+        pw, ph = w * SS - 40 * SS, h * SS - 40 * SS
+        pnl, pad = self.panel_layer(pw, ph)
+        f.paste(pnl, 20 * SS - pad, 20 * SS - pad, k=ease_out(prog(t, 0, 0.25)))
+        cx = w * SS // 2
+        head = text_img(self.p["title"], font("bold", 28), rgb(self.gold), tracking=5)
+        f.paste(head, cx - head.size[0] // 2, 50 * SS, k=ease_out(prog(t, 0.05, 0.3)))
+        items = self.p["items"]
+        ats = self.p.get("at_each", [0.4 + 0.5 * i for i in range(len(items))])
+        chips = [self.chip(tx, True, 44) for tx in items]
+        gap = 26 * SS
+        total = sum(c.size[0] for c in chips) + gap * (len(chips) - 1)
+        bx, by = cx - total // 2, 100 * SS
+        for c, at in zip(chips, ats):
+            pb = prog(t, at, 0.45)
+            if pb > 0:
+                s = max(0.01, back_out(pb))
+                cc = c.resize((max(1, int(c.size[0] * s)), max(1, int(c.size[1] * s))), Image.LANCZOS)
+                f.paste(cc, bx + (c.size[0] - cc.size[0]) // 2, by + (c.size[1] - cc.size[1]) // 2, k=clamp(pb * 2))
+            bx += c.size[0] + gap
+        if self.p.get("note"):
+            note = text_img(self.p["note"], font("semibold", 38), rgb(self.white))
+            f.paste(reveal(note, prog(t, self.p.get("note_at", 2.0), 0.45)), cx - note.size[0] // 2,
+                    by + chips[0].size[1] + 20 * SS)
+        return f.final(k, off)
+
+
+class Checklist(Graphic):
+    """Heading + 2x2 grid; each item's ring draws and ticks at its own time."""
+    HEIGHT = 280
+
+    def frame(self, t):
+        x, y, w, h = self.region
+        f = Frame(w, h)
+        k, off = envelope(t, self.dur)
+        pw, ph = w * SS - 40 * SS, h * SS - 40 * SS
+        pnl, pad = self.panel_layer(pw, ph)
+        f.paste(pnl, 20 * SS - pad, 20 * SS - pad, k=ease_out(prog(t, 0, 0.25)))
+        cx = w * SS // 2
+        head = text_img(self.p["title"], font("bold", 28), rgb(self.gold), tracking=5)
+        f.paste(head, cx - head.size[0] // 2, 48 * SS, k=ease_out(prog(t, 0.05, 0.3)))
+        items, ats = self.p["items"], self.p["tick_at"]
+        d = f.draw()
+        r = 19 * SS
+        col_w = (pw - 60 * SS) // 2
+        for i, (txt, at) in enumerate(zip(items, ats)):
+            ox = 20 * SS + 40 * SS + (i % 2) * col_w
+            oy = 102 * SS + (i // 2) * 78 * SS
+            ccx, ccy = ox + r, oy + r + 4 * SS
+            pt = prog(t, at, 0.45)
+            done = pt > 0
+            label = text_img(txt, font("semibold", 38), rgb(self.white, 255 if done else 150))
+            f.paste(label, ox + 2 * r + 18 * SS, oy, k=ease_out(prog(t, 0.15 + 0.08 * i, 0.3)))
+            d.ellipse((ccx - r, ccy - r, ccx + r, ccy + r), outline=(255, 255, 255, 90), width=2 * SS)
+            if done:
+                e = ease_out(pt)
+                d.arc((ccx - r, ccy - r, ccx + r, ccy + r), -90, -90 + 360 * e, fill=rgb(self.gold), width=4 * SS)
+                pc = ease_in_out(prog(t, at + 0.2, 0.25))
+                if pc > 0:
+                    a, b, c = (ccx - 8 * SS, ccy), (ccx - 2 * SS, ccy + 7 * SS), (ccx + 9 * SS, ccy - 7 * SS)
+                    if pc < 0.4:
+                        q = pc / 0.4
+                        d.line((a, (a[0] + (b[0] - a[0]) * q, a[1] + (b[1] - a[1]) * q)), fill=rgb(self.gold), width=4 * SS)
+                    else:
+                        q = (pc - 0.4) / 0.6
+                        d.line((a, b, (b[0] + (c[0] - b[0]) * q, b[1] + (c[1] - b[1]) * q)), fill=rgb(self.gold),
+                               width=4 * SS, joint="curve")
+        return f.final(k, off)
+
+
+TYPES = {"chips": Chips, "checklist": Checklist, "title": Title, "strike": Strike, "diagram": Diagram, "compare": Compare,
          "statement": Statement, "keyword": Keyword, "endcard": EndCard}
 
 
