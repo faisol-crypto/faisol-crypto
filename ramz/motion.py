@@ -13,6 +13,8 @@ Graphic types (all text comes from the plan — nothing is invented here):
   statement  — two-line statement, second line large + light sweep
   keyword    — compact single-phrase panel
   endcard    — brand line + question + call to action
+  chips      — heading + chips that pop in as each item is named (current item lit gold)
+  versus     — two-column comparison of the speaker's own claim (tick / cross, no numbers)
 """
 import math
 import os
@@ -454,7 +456,7 @@ class EndCard(Graphic):
         f.paste(pnl, 20 * SS - pad, 20 * SS - pad, k=ease_out(prog(t, 0, 0.3)))
         cx = w * SS // 2
         q = text_img(self.p["question"], font("semibold", 54), rgb(self.white))
-        cta = text_img(self.p["cta"], font("display", 108), rgb(self.gold))
+        cta = text_img(self.p["cta"], font("display", self.p.get("cta_size", 108)), rgb(self.gold))
         cta = sweep(cta, prog(t, 1.0, 0.7))
         top = 70 * SS
         f.paste(reveal(q, prog(t, 0.05, 0.4)), cx - q.size[0] // 2, top)
@@ -463,8 +465,91 @@ class EndCard(Graphic):
         return f.final(k, off)
 
 
+class ChipList(Compare):
+    """Heading + chips that pop in one by one as each item is named (wraps to rows)."""
+    HEIGHT = 380
+
+    def frame(self, t):
+        x, y, w, h = self.region
+        f = Frame(w, h)
+        k, off = envelope(t, self.dur)
+        pw, ph = w * SS - 40 * SS, h * SS - 40 * SS
+        pnl, pad = self.panel_layer(pw, ph)
+        f.paste(pnl, 20 * SS - pad, 20 * SS - pad)
+        cx = w * SS // 2
+        head = text_img(self.p.get("title", ""), font("bold", 28), rgb(self.gold), tracking=5)
+        f.paste(head, cx - head.size[0] // 2, 58 * SS, k=ease_out(prog(t, 0, 0.3)))
+        size = self.p.get("size", 44)
+        chips = [self.chip(tx, False, size) for tx in self.p["items"]]
+        ats = self.p["items_at"]
+        per_row = self.p.get("per_row", 3)
+        rows = [list(range(i, min(i + per_row, len(chips)))) for i in range(0, len(chips), per_row)]
+        gap = 24 * SS
+        by = 118 * SS
+        for row in rows:
+            total = sum(chips[i].size[0] for i in row) + gap * (len(row) - 1)
+            bx = cx - total // 2
+            for i in row:
+                c = chips[i]
+                pb = prog(t, ats[i], 0.4)
+                if pb > 0:
+                    # the item being said is gold; earlier items settle to outline
+                    lit = clamp(1 - prog(t, ats[i + 1] if i + 1 < len(ats) else 99, 0.3))
+                    s = max(0.01, back_out(pb))
+                    src = self.chip(self.p["items"][i], True, size) if lit > 0.5 else c
+                    cc = src.resize((max(1, int(c.size[0] * s)), max(1, int(c.size[1] * s))), Image.LANCZOS)
+                    f.paste(cc, bx + (c.size[0] - cc.size[0]) // 2, by + (c.size[1] - cc.size[1]) // 2,
+                            k=clamp(pb * 2))
+                bx += c.size[0] + gap
+            by += chips[0].size[1] + 20 * SS
+        return f.final(k, off)
+
+
+class Versus(Graphic):
+    """Two-column comparison of what the speaker said (no numbers, no invented data)."""
+    HEIGHT = 400
+
+    def frame(self, t):
+        x, y, w, h = self.region
+        f = Frame(w, h)
+        k, off = envelope(t, self.dur)
+        pw, ph = w * SS - 40 * SS, h * SS - 40 * SS
+        pnl, pad = self.panel_layer(pw, ph)
+        f.paste(pnl, 20 * SS - pad, 20 * SS - pad)
+        cx = w * SS // 2
+        d = f.draw()
+        head = text_img(self.p.get("title", ""), font("bold", 28), rgb(self.gold), tracking=5)
+        f.paste(head, cx - head.size[0] // 2, 58 * SS, k=ease_out(prog(t, 0, 0.3)))
+        # divider grows from the top
+        pd = ease_in_out(prog(t, 0.15, 0.4))
+        top, bot = 118 * SS, (h - 64) * SS
+        if pd > 0:
+            d.line((cx, top, cx, top + (bot - top) * pd), fill=(255, 255, 255, 60), width=2 * SS)
+        for side, key, at, good in ((-1, "left", self.p.get("left_at", 0.3), True),
+                                    (1, "right", self.p.get("right_at", 1.0), False)):
+            colx = cx + side * (w * SS // 4 - 10 * SS)
+            name = text_img(self.p[key], font("display", 92), rgb(self.gold if good else self.white))
+            note = text_img(self.p[key + "_note"], font("semibold", 36), (235, 235, 230, 255))
+            mark_col = rgb(self.p.get("good", "#26A69A")) if good else rgb(self.alert)
+            pa = prog(t, at, 0.45)
+            f.paste(reveal(name, pa), colx - name.size[0] // 2, top + 6 * SS)
+            ny = top + name.size[1] + 24 * SS
+            f.paste(reveal(note, prog(t, at + 0.2, 0.45)), colx - note.size[0] // 2 + 22 * SS, ny)
+            pm = ease_out(prog(t, at + 0.25, 0.3))
+            if pm > 0:
+                mx, my, r = colx - note.size[0] // 2 - 16 * SS, ny + note.size[1] // 2, 13 * SS
+                if good:  # tick
+                    d.line([(mx - r, my), (mx - r * 0.3, my + r * 0.7), (mx - r + 2 * r * pm, my - r * pm)],
+                           fill=mark_col, width=6 * SS, joint="curve")
+                else:  # cross
+                    d.line((mx - r * pm, my - r * pm, mx + r * pm, my + r * pm), fill=mark_col, width=6 * SS)
+                    d.line((mx - r * pm, my + r * pm, mx + r * pm, my - r * pm), fill=mark_col, width=6 * SS)
+        return f.final(k, off)
+
+
 TYPES = {"title": Title, "strike": Strike, "diagram": Diagram, "compare": Compare,
-         "statement": Statement, "keyword": Keyword, "endcard": EndCard}
+         "statement": Statement, "keyword": Keyword, "endcard": EndCard,
+         "chips": ChipList, "versus": Versus}
 
 
 def render(kind, params, dur, fps, out_dir, brand):

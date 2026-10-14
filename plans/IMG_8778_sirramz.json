@@ -1,0 +1,785 @@
+{
+  "_comment": "SIR RAMZ v2.0 — IMG_8778 'Gold sekarang banyak manipulation — cuba instrument lain'. Satu take (selfie dalam kereta). Dialog dirapatkan tanpa mengubah maksud; ulangan ('Perasan tak pada ni?', 'Setuju tak guys?', 'Cuba korang komen' awal) dan berfikir kuat ('Apa?', 'apa lagi?', 'faham tak?') dibuang. Video tamat pada 95.08s sumber kerana wajah terdedah dari ~95.4s (speaker mencapai telefon). Caption: transkrip dijajarkan paksa (teks diketahui -> pulau suara); 'sebagai tahu' -> 'saya bagi tahu' (konsisten dengan 77s), 'terik' disembunyi (tidak jelas).",
+  "source": "../footage/work/IMG_8778_protected.mp4",
+  "privacy_required": true,
+  "brand": "../brand/sirramz.json",
+  "output": {
+    "path": "../footage/out/SIRRAMZ_IMG_8778.mp4",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "crf": 17,
+    "preset": "slow"
+  },
+  "fit": "crop",
+  "correction": [
+    "curves=master='0/0 0.5/0.49 0.8/0.77 1/0.93'",
+    "colorbalance=rh=0.012:bh=-0.012"
+  ],
+  "grade": "natural",
+  "vignette": 0.24,
+  "audio": {
+    "target_lufs": -14,
+    "highpass": 90,
+    "denoise": true,
+    "denoise_nf": -40,
+    "voice_eq": true
+  },
+  "music": {
+    "file": "../assets/music/sirramz_bed.wav",
+    "gain_db": -25,
+    "duck": true,
+    "fade_in": 1.2,
+    "fade_out": 2.0
+  },
+  "captions": {
+    "transcript": "../footage/report/IMG_8778.forced.json",
+    "replace": {},
+    "omit": [
+      "terik"
+    ],
+    "highlight": [
+      "manipulation",
+      "fake",
+      "out",
+      "gold",
+      "snr",
+      "snd",
+      "ict",
+      "smc",
+      "fibo",
+      "gbpjpy",
+      "gj",
+      "wti",
+      "oil",
+      "respect",
+      "se-agresif",
+      "instrument",
+      "fokus",
+      "newbie",
+      "pengalaman"
+    ],
+    "highlight_color": "#D9B56A",
+    "max_words": 3,
+    "uppercase": true,
+    "y": 0.71,
+    "size": 0.058,
+    "min_prob": 0.15,
+    "drop_below": 0.0
+  },
+  "graphics": [
+    {
+      "type": "title",
+      "seg": "hook_a",
+      "at": 0.0,
+      "dur": 3.9,
+      "line1": "Gold sekarang, banyak dia buat",
+      "line2": "MANIPULATION",
+      "size1": 50,
+      "size2": 96,
+      "region": [
+        60,
+        30,
+        960,
+        372
+      ]
+    },
+    {
+      "type": "chips",
+      "seg": "sop_a",
+      "at": 1.596,
+      "dur": 6.81,
+      "title": "SOP YANG KORANG PAKAI",
+      "items": [
+        "SNR",
+        "SND",
+        "ICT",
+        "SMC",
+        "FIBO"
+      ],
+      "items_at": [
+        1.607,
+        2.386,
+        3.345,
+        4.355,
+        5.244
+      ],
+      "per_row": 3,
+      "region": [
+        60,
+        30,
+        960,
+        400
+      ]
+    },
+    {
+      "type": "statement",
+      "seg": "main_a",
+      "at": 3.171,
+      "dur": 3.41,
+      "line1": "Manipulation ataupun",
+      "line2": "FAKE OUT",
+      "size2": 128,
+      "region": [
+        60,
+        30,
+        960,
+        330
+      ]
+    },
+    {
+      "type": "compare",
+      "seg": "sol_d",
+      "at": 0.506,
+      "dur": 7.65,
+      "title": "CUBA INSTRUMENT LAIN",
+      "from": "GOLD",
+      "to": [
+        "GBPJPY",
+        "WTI · OIL"
+      ],
+      "to_at": [
+        3.865,
+        6.146
+      ],
+      "region": [
+        60,
+        30,
+        960,
+        430
+      ]
+    },
+    {
+      "type": "keyword",
+      "seg": "best",
+      "at": 0.0,
+      "dur": 3.57,
+      "text": "Oil best. For now.",
+      "gold": true,
+      "size": 80,
+      "region": [
+        60,
+        40,
+        960,
+        250
+      ]
+    },
+    {
+      "type": "keyword",
+      "seg": "why_b",
+      "at": 1.123,
+      "dur": 4.51,
+      "text": "Lebih respect area.",
+      "size": 76,
+      "region": [
+        60,
+        40,
+        960,
+        250
+      ]
+    },
+    {
+      "type": "chips",
+      "seg": "why_b",
+      "at": 5.686,
+      "dur": 2.01,
+      "title": "SOP YANG KORANG PAKAI",
+      "items": [
+        "SNR",
+        "SND"
+      ],
+      "items_at": [
+        0.4,
+        0.841
+      ],
+      "per_row": 3,
+      "region": [
+        60,
+        30,
+        960,
+        300
+      ]
+    },
+    {
+      "type": "versus",
+      "seg": "resp",
+      "at": 0.0,
+      "dur": 3.65,
+      "title": "UNTUK SEKARANG",
+      "left": "OIL",
+      "left_note": "Lebih respect area",
+      "right": "GOLD",
+      "right_note": "Banyak fake out",
+      "left_at": 0.25,
+      "right_at": 1.147,
+      "region": [
+        60,
+        30,
+        960,
+        400
+      ]
+    },
+    {
+      "type": "keyword",
+      "seg": "fok_b",
+      "at": 0.0,
+      "dur": 1.83,
+      "text": "Fokus je.",
+      "gold": true,
+      "size": 86,
+      "region": [
+        60,
+        40,
+        960,
+        250
+      ]
+    },
+    {
+      "type": "endcard",
+      "seg": "agree",
+      "at": 0.0,
+      "dur": 2.03,
+      "question": "Setuju tak?",
+      "cta": "Komen kat bawah.",
+      "cta_size": 84,
+      "region": [
+        60,
+        30,
+        960,
+        380
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "id": "hook_a",
+      "role": "hook",
+      "in": 4.72,
+      "out": 5.78,
+      "text": "Gold sekarang,",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.0161,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      },
+      "purpose": "HOOK — ayat pembukaan asal 'Gold sekarang banyak dia buat manipulation' (pembuka 'Eh korang perasan tak?' diundur; soalan sama diulang dalam q1). Tajuk premium dari frame 0 (thumbnail), push-in perlahan merentas 3 potongan.",
+      "sfx": [
+        {
+          "file": "../assets/sfx/soft_impact.wav",
+          "at": 0.05,
+          "gain_db": -17
+        }
+      ]
+    },
+    {
+      "id": "hook_b",
+      "role": "hook",
+      "in": 6.72,
+      "out": 8.55,
+      "text": "banyak dia buat",
+      "zoom": {
+        "from": 1.0161,
+        "to": 1.0439,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      }
+    },
+    {
+      "id": "hook_c",
+      "role": "hook",
+      "in": 9.36,
+      "out": 10.42,
+      "text": "manipulation.",
+      "zoom": {
+        "from": 1.0439,
+        "to": 1.06,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      }
+    },
+    {
+      "id": "sop_a",
+      "role": "context",
+      "in": 11.4,
+      "out": 14.55,
+      "text": "Lagi-lagi yang pakai SOP seperti",
+      "zoom": {
+        "from": 1.09,
+        "to": 1.09,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      },
+      "purpose": "CONTEXT — senarai SOP: chip muncul tepat ketika setiap nama disebut; chip semasa menyala emas."
+    },
+    {
+      "id": "sop_b",
+      "role": "development",
+      "in": 15.07,
+      "out": 15.85,
+      "text": "SNR,",
+      "zoom": {
+        "from": 1.09,
+        "to": 1.09,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 0.073,
+          "gain_db": -25
+        }
+      ]
+    },
+    {
+      "id": "sop_c",
+      "role": "development",
+      "in": 16.62,
+      "out": 17.58,
+      "text": "SND,",
+      "zoom": {
+        "from": 1.09,
+        "to": 1.09,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 0.072,
+          "gain_db": -25
+        }
+      ]
+    },
+    {
+      "id": "sop_d",
+      "role": "development",
+      "in": 18.12,
+      "out": 19.15,
+      "text": "ICT,",
+      "zoom": {
+        "from": 1.09,
+        "to": 1.09,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 0.071,
+          "gain_db": -25
+        }
+      ]
+    },
+    {
+      "id": "sop_e",
+      "role": "development",
+      "in": 19.72,
+      "out": 20.65,
+      "text": "SMC,",
+      "zoom": {
+        "from": 1.09,
+        "to": 1.09,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 0.051,
+          "gain_db": -25
+        }
+      ]
+    },
+    {
+      "id": "sop_f",
+      "role": "development",
+      "in": 21.37,
+      "out": 22.58,
+      "text": "Fibo dan sebagainya.",
+      "zoom": {
+        "from": 1.09,
+        "to": 1.09,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 0.01,
+          "gain_db": -25
+        }
+      ]
+    },
+    {
+      "id": "q1",
+      "role": "context",
+      "in": 22.88,
+      "out": 29.16,
+      "text": "Korang perasan tak pada ni? Yang ni saya bagi tahu, yang dah pengalaman ataupun yang newbie, tak kisahlah.",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.04,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "purpose": "Sasaran penonton (berpengalaman / newbie). 'Cuba korang komen' + 'Perasan tak pada ni?' yang berulang dibuang — CTA disimpan untuk penutup."
+    },
+    {
+      "id": "main_a",
+      "role": "development",
+      "in": 31.55,
+      "out": 37.65,
+      "text": "Yang saya perasan, itu yang kerap berlaku, manipulation ataupun fake out dalam market gold",
+      "zoom": {
+        "from": 1.06,
+        "to": 1.13,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "purpose": "VISUAL EMPHASIS — pernyataan utama; push-in terkawal + bass hit lembut pada 'fake out'.",
+      "sfx": [
+        {
+          "file": "../assets/sfx/bass_hit.wav",
+          "at": 4.194,
+          "gain_db": -19
+        }
+      ]
+    },
+    {
+      "id": "main_b",
+      "role": "development",
+      "in": 38.58,
+      "out": 40.05,
+      "text": "beberapa tahun terdekat ni.",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.0,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      }
+    },
+    {
+      "id": "agg_a",
+      "role": "development",
+      "in": 43.7,
+      "out": 46.12,
+      "text": "Apa yang saya nampak, bila market dah",
+      "zoom": {
+        "from": 1.06,
+        "to": 1.06,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "purpose": "'Dan' di awal dan jeda 'dah... se-agresif' dipendekkan; punch-in pada 'se-agresif' sebagai pattern interrupt."
+    },
+    {
+      "id": "agg_b",
+      "role": "development",
+      "in": 46.78,
+      "out": 48.82,
+      "text": "se-agresif macam ni,",
+      "zoom": {
+        "from": 1.13,
+        "to": 1.13,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/whoosh.wav",
+          "at": 0.0,
+          "gain_db": -22
+        }
+      ]
+    },
+    {
+      "id": "sol_a",
+      "role": "development",
+      "in": 49.66,
+      "out": 50.62,
+      "text": "solution dia",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.0079,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      },
+      "purpose": "DEVELOPMENT — penyelesaian. Jeda panjang sebelum 'untuk' dan 'kenapa' dirapatkan."
+    },
+    {
+      "id": "sol_b",
+      "role": "development",
+      "in": 52.26,
+      "out": 54.25,
+      "text": "untuk trader-trader,",
+      "zoom": {
+        "from": 1.0079,
+        "to": 1.0242,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      }
+    },
+    {
+      "id": "sol_c",
+      "role": "development",
+      "in": 54.78,
+      "out": 55.48,
+      "text": "kenapa",
+      "zoom": {
+        "from": 1.0242,
+        "to": 1.03,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      }
+    },
+    {
+      "id": "sol_d",
+      "role": "development",
+      "in": 55.98,
+      "out": 58.02,
+      "text": "you guys tak cuba instrument yang lain?",
+      "zoom": {
+        "from": 1.08,
+        "to": 1.08,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/whoosh.wav",
+          "at": 0.506,
+          "gain_db": -21
+        }
+      ]
+    },
+    {
+      "id": "eg",
+      "role": "development",
+      "in": 58.88,
+      "out": 61.05,
+      "text": "Seperti contoh yang dulu-dulu, famous dulu.",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.0,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "purpose": "Kad GOLD -> GBPJPY / WTI·OIL, setiap chip muncul ketika disebut. 'Apa?', 'apa lagi?' dan 'faham tak?' (berfikir kuat) dibuang."
+    },
+    {
+      "id": "gj",
+      "role": "development",
+      "in": 63.12,
+      "out": 65.4,
+      "text": "GBPJPY, GJ,",
+      "zoom": {
+        "from": 1.07,
+        "to": 1.07,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 0.161,
+          "gain_db": -22
+        }
+      ]
+    },
+    {
+      "id": "wti",
+      "role": "development",
+      "in": 67.1,
+      "out": 68.72,
+      "text": "WTI, oil.",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.0,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 0.162,
+          "gain_db": -22
+        }
+      ]
+    },
+    {
+      "id": "best",
+      "role": "development",
+      "in": 70.05,
+      "out": 70.85,
+      "text": "Oil best.",
+      "zoom": {
+        "from": 1.11,
+        "to": 1.11,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "sfx": [
+        {
+          "file": "../assets/sfx/soft_impact.wav",
+          "at": 0.05,
+          "gain_db": -21
+        }
+      ]
+    },
+    {
+      "id": "why_a",
+      "role": "development",
+      "in": 71.05,
+      "out": 73.72,
+      "text": "Sebab apa yang saya nampak, oil for now,",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.03,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "purpose": "Sebab: oil lebih respect area SOP. Keyword + callback chip SNR/SND."
+    },
+    {
+      "id": "why_b",
+      "role": "development",
+      "in": 74.42,
+      "out": 82.02,
+      "text": "dia lagi banyak respect area-area yang saya bagi tahu tadi, SOP yang korang pakai tu, SNR, SND dan sebagainya.",
+      "zoom": {
+        "from": 1.08,
+        "to": 1.0,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      }
+    },
+    {
+      "id": "resp",
+      "role": "payoff",
+      "in": 83.28,
+      "out": 86.72,
+      "text": "Banyak dia respect berbanding dengan gold. Untuk sekarang,",
+      "zoom": {
+        "from": 1.06,
+        "to": 1.11,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "purpose": "PAYOFF — perbandingan OIL vs GOLD (kata-kata speaker sendiri, tiada angka).",
+      "sfx": [
+        {
+          "file": "../assets/sfx/whoosh.wav",
+          "at": 0.0,
+          "gain_db": -22
+        }
+      ]
+    },
+    {
+      "id": "fok_a",
+      "role": "payoff",
+      "in": 86.98,
+      "out": 88.28,
+      "text": "why not you guys tak",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.0,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "purpose": "Takeaway: fokus pada instrument itu."
+    },
+    {
+      "id": "fok_b",
+      "role": "development",
+      "in": 88.88,
+      "out": 90.05,
+      "text": "fokus je terik dekat",
+      "zoom": {
+        "from": 1.09,
+        "to": 1.09,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      }
+    },
+    {
+      "id": "fok_c",
+      "role": "development",
+      "in": 90.47,
+      "out": 91.18,
+      "text": "instrument tu?",
+      "zoom": {
+        "from": 1.09,
+        "to": 1.09,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "linear"
+      }
+    },
+    {
+      "id": "agree",
+      "role": "ending",
+      "in": 91.98,
+      "out": 92.45,
+      "text": "Setuju tak?",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.0,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "purpose": "ENDING — 'Setuju tak?' + 'Cuba korang komen' sebagai satu CTA; 'Setuju tak guys?' yang awal dibuang. Video tamat sebelum 95.3s (speaker mencapai telefon — wajah terdedah selepas itu, tidak digunakan).",
+      "sfx": [
+        {
+          "file": "../assets/sfx/whoosh.wav",
+          "at": 0.0,
+          "gain_db": -23
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "role": "ending",
+      "in": 93.52,
+      "out": 95.08,
+      "text": "Cuba korang komen nak tengok macam mana.",
+      "zoom": {
+        "from": 1.05,
+        "to": 1.0,
+        "cx": 0.5,
+        "cy": 0.42,
+        "ease": "smooth"
+      },
+      "transition_out": "dip"
+    }
+  ]
+}

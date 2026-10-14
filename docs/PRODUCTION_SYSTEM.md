@@ -119,6 +119,7 @@ Anotasi chart (`annotations`) — koordinat dinormalkan pada kanvas output:
 
 - `analyze --transcribe` (Whisper `medium`, Bahasa Melayu) memberi transkrip peringkat perkataan dengan keyakinan setiap perkataan, jeda, dan filler words.
 - Potongan ditentukan dengan sempadan pertuturan sebenar (timestamp perkataan + envelope tenaga audio), bukan anggaran.
+- Timestamp perkataan Whisper sering 'hanyut' ke dalam jeda. Bila teks setiap segment diketahui, isi medan `text` pada segment dan jalankan `python3 -m ramz.align plan.json -o x.forced.json` (MMS forced alignment) — guna fail itu sebagai `captions.transcript`, dan set `drop_below: 0` kerana teks sudah disahkan.
 - Caption automatik (`captions` dalam plan) dipetakan semula ke timeline akhir selepas potongan. Perkataan yang tidak jelas **tidak dipaparkan** sehingga disahkan (`omit`), pembetulan disenaraikan (`replace`), dan semuanya ditulis ke `*.captions_review.md`.
 - Potong dengan memecahkan rakaman kepada segment; simpan ~0.25s jeda natural.
 - Kekalkan intonasi, loghat Melayu Malaysia, penekanan dan rentak. Jangan buat terlalu laju/sempurna.
