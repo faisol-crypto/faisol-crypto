@@ -1,0 +1,38 @@
+{
+  "_comment": "SIR RAMZ v2.0 — VID3 (copy_1270E8EF…): water taxi Hong Kong. Privasi: HANYA wajah speaker diblur (ramz.privacy --only footage/ref/me.jpg); kawan & penumpang lain tidak diblur atas permintaan speaker. Dibuang: 'aa' (2x), pengulangan 'atas dia aa atas dia', 'ya water taxi'. 'berikut' (0:15, tidak jelas) disembunyi dari caption.",
+  "source": "../footage/work3/VID3_protected.mp4",
+  "privacy_required": true,
+  "brand": "../brand/sirramz.json",
+  "output": {"path": "../footage/out3/SIRRAMZ_WATERTAXI.mp4", "width": 1080, "height": 1920, "fps": 30, "crf": 17, "preset": "slow"},
+  "fit": "crop",
+  "correction": ["unsharp=5:5:0.35:5:5:0", "curves=master='0/0 0.5/0.5 0.85/0.82 1/0.95'"],
+  "grade": "natural",
+  "vignette": 0.16,
+  "audio": {"target_lufs": -14, "highpass": 110, "denoise": true, "denoise_nf": -36, "voice_eq": true},
+  "music": {"file": "../assets/music/sirramz_bed_hk.wav", "gain_db": -22, "duck": true, "fade_in": 0.8, "fade_out": 2.2},
+  "captions": {"transcript": "../footage/report3/VID3.forced.json", "replace": {}, "omit": ["berikut"],
+    "highlight": ["alhamdulillah", "water", "taxi", "view", "tiket", "kameraman", "belakang"],
+    "highlight_color": "#D9B56A", "max_words": 3, "uppercase": true, "y": 0.72, "size": 0.058, "min_prob": 0.15, "drop_below": 0.0},
+  "graphics": [
+    {"type": "title", "seg": "a1", "at": 0.0, "dur": 4.6, "line1": "Hong Kong", "line2": "WATER TAXI", "size1": 54, "size2": 118, "region": [60, 40, 960, 372]},
+    {"type": "endcard", "seg": "end", "at": 0.6, "dur": 3.2, "question": "Water taxi,", "cta": "Hong Kong.", "cta_size": 104, "region": [60, 40, 960, 380]}
+  ],
+  "segments": [
+    {"id": "a1", "role": "hook", "in": 0.58, "out": 6.68, "speech": "Alhamdulillah selepas kita berada dekat bawah tadi dan kita dapat kesempatan maksudnya tiket",
+     "purpose": "HOOK — ayat pembukaan asal; tajuk lengkap dari frame 0 (thumbnail).",
+     "sfx": [{"file": "../assets/sfx/soft_impact.wav", "at": 0.05, "gain_db": -18}]},
+    {"id": "a2", "role": "hook", "in": 7.12, "out": 9.27, "speech": "ada lebihlah untuk kita naik", "purpose": "'aa' dibuang."},
+    {"id": "a3", "role": "hook", "in": 11.14, "out": 12.33, "speech": "atas dia punya water taxi.", "purpose": "Pengulangan 'atas dia aa' dan 'ya water taxi' dibuang."},
+    {"id": "c1", "role": "context", "in": 13.78, "out": 15.62, "speech": "So korang tengok view berikut bahagian belakang."},
+    {"id": "k1", "role": "development", "in": 17.55, "out": 20.10, "speech": "Baik, kameraman kita tengah buat kerja.",
+     "purpose": "Dek belakang — kawan sedang merakam; momen santai.",
+     "sfx": [{"file": "../assets/sfx/whoosh.wav", "at": 0.0, "gain_db": -22}]},
+    {"id": "b1", "role": "development", "in": 21.6, "out": 23.9, "captions": false, "gain_db": -4,
+     "zoom": {"from": 1.0, "to": 1.06, "cx": 0.5, "cy": 0.4}, "purpose": "B-ROLL — pelabuhan, biar bernafas."},
+    {"id": "n1", "role": "payoff", "in": 24.25, "out": 25.75, "speech": "Nah, sebelah je view sikit."},
+    {"id": "end", "role": "ending", "in": 28.2, "out": 32.0, "captions": false, "gain_db": -8,
+     "zoom": {"from": 1.06, "to": 1.0, "cx": 0.5, "cy": 0.45}, "transition_out": "dip",
+     "purpose": "ENDING — skyline + kad akhir, fade ke hitam.",
+     "sfx": [{"file": "../assets/sfx/whoosh.wav", "at": 0.5, "gain_db": -23}]}
+  ]
+}
