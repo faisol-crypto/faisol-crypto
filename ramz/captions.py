@@ -146,7 +146,16 @@ def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_
             last_end = te
         if cur:
             seg_chunks.append(cur)
-        for phrase in seg_chunks:
+        # a lone short word ("eh", "tu") flashing for a few frames is unreadable:
+        # fold it into the next phrase when that follows straight after
+        merged = []
+        for ph in seg_chunks:
+            if merged and len(merged[-1]) == 1 and merged[-1][0]["e"] - merged[-1][0]["s"] < 0.35 \
+                    and ph[0]["s"] - merged[-1][-1]["e"] < 0.3:
+                merged[-1] = merged[-1] + ph
+            else:
+                merged.append(ph)
+        for phrase in merged:
             chunks.extend(balance(phrase, max_words))
 
     events = []
@@ -158,7 +167,10 @@ def build(cfg, transcript_path, segments, offsets, durs, W, H, font_family, out_
         words_out = [(c["text"].upper() if upper else c["text"], c.get("hl")) for c in ch]
         plain = " ".join(w for w, _ in words_out)
         styled = " ".join(f"{hl_tag}{w}{{\\c}}" if hl else w for w, hl in words_out)
-        events.append((start, max(end, start + 0.3), plain, styled))
+        end = max(end, start + 0.3)
+        if i + 1 < len(chunks):
+            end = min(end, chunks[i + 1][0]["s"])  # never two captions on screen at once
+        events.append((start, end, plain, styled))
 
     size = int(cfg.get("size", 0.058) * W)
     y = int(cfg.get("y", 0.70) * H)

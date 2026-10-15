@@ -70,6 +70,11 @@ def main():
     if args.plan:
         plan = load_json(args.plan)
         segs = plan.get("segments", [])
+        target = float(plan.get("output", {}).get("fps", 30))
+        if v:
+            ok = abs(v["fps"] - target) < 0.01
+            check("EXPORT", "Frame rate = sasaran", "PASS" if ok else "FAIL",
+                  f"{v['fps']:.3f} (sasaran {target:g}) — selain sasaran bermakna audio/video boleh lari")
         if segs:
             first = segs[0]
             hl = first["out"] - first["in"]

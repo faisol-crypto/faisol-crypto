@@ -1,0 +1,362 @@
+{
+  "_comment": "SIR RAMZ v2.0 — VID2 (copy_42E01911…): vlog Hong Kong sebelum Forex Expo. Privasi: HANYA wajah speaker diblur (ramz.privacy --only footage/ref/me.jpg, identiti YuNet+SFace) atas permintaan speaker — kawan (Pak Long) dan orang awam tidak diblur. Pembetulan transkrip yang perlu disahkan: 'belajar'->'belanja' (0:06), 'elik-elik'->'terik-terik' (0:35), 'nimat'->'nikmat' (1:29).",
+  "source": "../footage/work2/VID2_protected.mp4",
+  "privacy_required": true,
+  "brand": "../brand/sirramz.json",
+  "output": {
+    "path": "../footage/out2/SIRRAMZ_HK.mp4",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "crf": 17,
+    "preset": "slow"
+  },
+  "fit": "crop",
+  "correction": [
+    "unsharp=5:5:0.35:5:5:0",
+    "curves=master='0/0 0.5/0.5 0.85/0.82 1/0.95'"
+  ],
+  "grade": "natural",
+  "vignette": 0.16,
+  "audio": {
+    "target_lufs": -14,
+    "highpass": 110,
+    "denoise": true,
+    "denoise_nf": -38,
+    "voice_eq": true
+  },
+  "music": {
+    "file": "../assets/music/sirramz_bed_hk.wav",
+    "gain_db": -23,
+    "duck": true,
+    "fade_in": 1.0,
+    "fade_out": 2.0
+  },
+  "captions": {
+    "transcript": "../footage/report2/VID2.forced.json",
+    "replace": {},
+    "omit": [],
+    "highlight": [
+      "forex",
+      "expo",
+      "hong",
+      "kong",
+      "view",
+      "famous",
+      "panas",
+      "sejuk",
+      "musim",
+      "kopi",
+      "layan",
+      "kedah",
+      "kuala",
+      "nikmat",
+      "datang"
+    ],
+    "highlight_color": "#D9B56A",
+    "max_words": 3,
+    "uppercase": true,
+    "y": 0.72,
+    "size": 0.058,
+    "min_prob": 0.15,
+    "drop_below": 0.0
+  },
+  "graphics": [
+    {
+      "type": "title",
+      "seg": "h1",
+      "at": 0.0,
+      "dur": 6.14,
+      "line1": "Sebelum Forex Expo",
+      "line2": "HONG KONG",
+      "size1": 52,
+      "size2": 120,
+      "region": [
+        60,
+        40,
+        960,
+        372
+      ]
+    },
+    {
+      "type": "keyword",
+      "seg": "w7",
+      "at": 0.0,
+      "dur": 2.26,
+      "text": "Nak masuk musim sejuk.",
+      "size": 72,
+      "region": [
+        60,
+        50,
+        960,
+        250
+      ]
+    },
+    {
+      "type": "keyword",
+      "seg": "k4",
+      "at": 0.0,
+      "dur": 1.76,
+      "text": "Layan habis.",
+      "gold": true,
+      "size": 86,
+      "region": [
+        60,
+        50,
+        960,
+        250
+      ]
+    },
+    {
+      "type": "endcard",
+      "seg": "e1",
+      "at": 0.61,
+      "dur": 3.35,
+      "question": "Lepas ni:",
+      "cta": "Forex Expo.",
+      "cta_size": 104,
+      "region": [
+        60,
+        40,
+        960,
+        380
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "id": "h1",
+      "role": "hook",
+      "in": 0.86,
+      "out": 2.17,
+      "speech": "Sebelum kita nak pergi ke",
+      "purpose": "HOOK — ayat pembukaan asal (premis vlog: view Hong Kong sebelum Forex Expo). Jeda panjang antara frasa dirapatkan; kad tajuk lengkap dari frame 0 (thumbnail).",
+      "sfx": [
+        {
+          "file": "../assets/sfx/soft_impact.wav",
+          "at": 0.05,
+          "gain_db": -18
+        }
+      ]
+    },
+    {
+      "id": "h2",
+      "role": "hook",
+      "in": 3.6,
+      "out": 4.86,
+      "speech": "event Forex Expo,"
+    },
+    {
+      "id": "h3",
+      "role": "hook",
+      "in": 5.97,
+      "out": 7.5,
+      "speech": "saya nak belanja korang view"
+    },
+    {
+      "id": "h4",
+      "role": "hook",
+      "in": 7.95,
+      "out": 9.45,
+      "speech": "dekat kawasan"
+    },
+    {
+      "id": "h5",
+      "role": "hook",
+      "in": 10.33,
+      "out": 10.97,
+      "speech": "Hong Kong."
+    },
+    {
+      "id": "c1",
+      "role": "context",
+      "in": 11.12,
+      "out": 15.45,
+      "speech": "Ini salah satu tempat yang agak famous lah sebab tu korang tengok. Ramai sangat orang kat sini.",
+      "purpose": "CONTEXT — tempat terkenal, ramai orang."
+    },
+    {
+      "id": "c2",
+      "role": "context",
+      "in": 15.85,
+      "out": 16.72,
+      "speech": "Kita tengok eh."
+    },
+    {
+      "id": "b1",
+      "role": "development",
+      "in": 18.6,
+      "out": 22.6,
+      "purpose": "B-ROLL — pan pelabuhan tanpa dialog: biar bernafas, muzik naik, push-in perlahan.",
+      "zoom": {
+        "from": 1.0,
+        "to": 1.07,
+        "cx": 0.5,
+        "cy": 0.45
+      },
+      "gain_db": -4,
+      "captions": false,
+      "sfx": [
+        {
+          "file": "../assets/sfx/whoosh.wav",
+          "at": 0.0,
+          "gain_db": -21
+        }
+      ]
+    },
+    {
+      "id": "w1",
+      "role": "development",
+      "in": 24.34,
+      "out": 29.82,
+      "speech": "Korang nampak je ni, sekarang ni petang betul tak? Betul lah. Sepatutnya cuaca kat sini,",
+      "purpose": "DEVELOPMENT — cuaca: petang tapi tak panas. Jeda (berjalan) dirapatkan."
+    },
+    {
+      "id": "w2",
+      "role": "development",
+      "in": 31.9,
+      "out": 34.18,
+      "speech": "kalau ikut normal lah, petang macam ni panas lah."
+    },
+    {
+      "id": "w3",
+      "role": "development",
+      "in": 34.7,
+      "out": 36.45,
+      "speech": "Matahari terik-terik kan? Tapi,",
+      "purpose": "'20 lebih rendah' dikekalkan seperti diucap (tiada unit disebut) — tiada grafik nombor supaya tidak mereka fakta."
+    },
+    {
+      "id": "w4",
+      "role": "development",
+      "in": 37.6,
+      "out": 39.05,
+      "speech": "dia punya cuaca kat sini"
+    },
+    {
+      "id": "w5",
+      "role": "development",
+      "in": 39.68,
+      "out": 40.55,
+      "speech": "20 lebih"
+    },
+    {
+      "id": "w6",
+      "role": "development",
+      "in": 41.1,
+      "out": 42.9,
+      "speech": "rendah sebab dia nak ke"
+    },
+    {
+      "id": "w7",
+      "role": "development",
+      "in": 43.32,
+      "out": 44.28,
+      "speech": "musim sejuk dah ni.",
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 0.02,
+          "gain_db": -23
+        }
+      ]
+    },
+    {
+      "id": "v1",
+      "role": "development",
+      "in": 44.84,
+      "out": 48.42,
+      "speech": "So, you guys tengok dia punya view. Kita ke depan sikit eh.",
+      "purpose": "Peralihan ke depan pelabuhan."
+    },
+    {
+      "id": "b2",
+      "role": "development",
+      "in": 49.4,
+      "out": 53.0,
+      "purpose": "B-ROLL — tepi pelabuhan.",
+      "zoom": {
+        "from": 1.04,
+        "to": 1.0,
+        "cx": 0.5,
+        "cy": 0.5
+      },
+      "gain_db": -4,
+      "captions": false,
+      "sfx": [
+        {
+          "file": "../assets/sfx/whoosh.wav",
+          "at": 0.0,
+          "gain_db": -22
+        }
+      ]
+    },
+    {
+      "id": "k1",
+      "role": "payoff",
+      "in": 59.66,
+      "out": 60.7,
+      "speech": "Eh, Pak Long minum air",
+      "purpose": "PAYOFF — momen santai dengan Pak Long (kopi + view). Sembang 'puyuh'/'lau-lau' yang tidak jelas dibuang."
+    },
+    {
+      "id": "k2",
+      "role": "payoff",
+      "in": 61.58,
+      "out": 63.62,
+      "speech": "tu. Eh, kena kopi tengok view macam ni."
+    },
+    {
+      "id": "k3",
+      "role": "payoff",
+      "in": 64.16,
+      "out": 65.12,
+      "speech": "Eh, main layan tu."
+    },
+    {
+      "id": "k4",
+      "role": "payoff",
+      "in": 65.76,
+      "out": 66.62,
+      "speech": "Layan habis.",
+      "sfx": [
+        {
+          "file": "../assets/sfx/soft_impact.wav",
+          "at": 0.0,
+          "gain_db": -22
+        }
+      ]
+    },
+    {
+      "id": "k5",
+      "role": "payoff",
+      "in": 66.72,
+      "out": 69.02,
+      "speech": "Kalau tuan-tuan nampak Kuala Kedah tu,"
+    },
+    {
+      "id": "k6",
+      "role": "payoff",
+      "in": 69.36,
+      "out": 70.3,
+      "speech": "sini elok je."
+    },
+    {
+      "id": "e1",
+      "role": "ending",
+      "in": 86.4,
+      "out": 90.36,
+      "speech": "Nampak? Nampak? So, you guys kena datang kat sini. Baru tahu sendiri nikmat dia macam mana.",
+      "purpose": "ENDING — ajakan datang sendiri; kad akhir menyambung ke Forex Expo (disebut di hook). Tamat 90.36s sebelum kamera turun.",
+      "transition_out": "dip",
+      "sfx": [
+        {
+          "file": "../assets/sfx/whoosh.wav",
+          "at": 0.61,
+          "gain_db": -23
+        }
+      ]
+    }
+  ]
+}

@@ -248,7 +248,11 @@ class Renderer:
         raise SystemExit(f"[ramz] fit tidak dikenali: {fit}")
 
     def render_segment(self, idx, seg):
-        dur = seg["out"] - seg["in"]
+        # whole frames only: a segment whose video is a frame shorter than its
+        # audio leaves a timestamp gap at every join, and the concat then
+        # plays slow (e.g. 29.83 fps) and drifts out of sync
+        nframes = max(1, int(round((seg["out"] - seg["in"]) * self.fps)))
+        dur = nframes / self.fps
         grade = seg.get("grade", self.plan.get("grade", "neutral"))
         if grade not in GRADES:
             raise SystemExit(f"[ramz] grade tidak dikenali: {grade}")
@@ -274,7 +278,7 @@ class Renderer:
             v.append("fade=t=in:st=0:d=0.18")
         if tout == "dip":
             v.append(f"fade=t=out:st={max(dur - 0.18, 0):.3f}:d=0.18")
-        v.append("format=yuv420p")
+        v.append(f"tpad=stop_mode=clone:stop_duration=0.2,trim=end_frame={nframes},format=yuv420p")
 
         a = ["asetpts=PTS-STARTPTS", "aresample=48000", "aformat=channel_layouts=stereo"]
         ac = self.plan.get("audio", {})
@@ -288,16 +292,17 @@ class Renderer:
             a.append(f"volume={seg['gain_db']}dB")
         # micro fades kill clicks on every cut
         a.append(f"afade=t=in:st=0:d=0.012,afade=t=out:st={max(dur - 0.02, 0):.3f}:d=0.02")
+        a.append(f"apad,atrim=0:{dur:.6f}")
 
         out = os.path.join(self.tmp, f"seg_{idx:03d}.mov")
         has_audio = self.src_info["audio"] is not None
-        cmd = ["ffmpeg", "-y", "-hide_banner", "-ss", f"{seg['in']:.3f}", "-t", f"{dur:.3f}", "-i", self.source]
+        cmd = ["ffmpeg", "-y", "-hide_banner", "-ss", f"{seg['in']:.3f}", "-t", f"{dur + 0.2:.3f}", "-i", self.source]
         if not has_audio:
             cmd += ["-f", "lavfi", "-t", f"{dur:.3f}", "-i", "anullsrc=r=48000:cl=stereo"]
         graph = f"[0:v]{','.join(v)}[vout];[{0 if has_audio else 1}:a]{','.join(a)}[aout]"
         cmd += ["-filter_complex", graph, "-map", "[vout]", "-map", "[aout]",
                 "-c:v", "libx264", "-preset", self.preset, "-crf", str(self.crf), "-r", f"{self.fps}",
-                "-pix_fmt", "yuv420p", "-c:a", "pcm_s16le", "-ar", "48000", "-t", f"{dur:.3f}",
+                "-pix_fmt", "yuv420p", "-c:a", "pcm_s16le", "-ar", "48000", "-t", f"{dur:.6f}",
                 out]
         run(cmd, quiet=not self.verbose)
         return out

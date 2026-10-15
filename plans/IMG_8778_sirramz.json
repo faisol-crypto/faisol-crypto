@@ -256,7 +256,7 @@
       "role": "hook",
       "in": 4.72,
       "out": 5.78,
-      "text": "Gold sekarang,",
+      "speech": "Gold sekarang,",
       "zoom": {
         "from": 1.0,
         "to": 1.0161,
@@ -278,7 +278,7 @@
       "role": "hook",
       "in": 6.72,
       "out": 8.55,
-      "text": "banyak dia buat",
+      "speech": "banyak dia buat",
       "zoom": {
         "from": 1.0161,
         "to": 1.0439,
@@ -292,7 +292,7 @@
       "role": "hook",
       "in": 9.36,
       "out": 10.42,
-      "text": "manipulation.",
+      "speech": "manipulation.",
       "zoom": {
         "from": 1.0439,
         "to": 1.06,
@@ -306,7 +306,7 @@
       "role": "context",
       "in": 11.4,
       "out": 14.55,
-      "text": "Lagi-lagi yang pakai SOP seperti",
+      "speech": "Lagi-lagi yang pakai SOP seperti",
       "zoom": {
         "from": 1.09,
         "to": 1.09,
@@ -321,7 +321,7 @@
       "role": "development",
       "in": 15.07,
       "out": 15.85,
-      "text": "SNR,",
+      "speech": "SNR,",
       "zoom": {
         "from": 1.09,
         "to": 1.09,
@@ -342,7 +342,7 @@
       "role": "development",
       "in": 16.62,
       "out": 17.58,
-      "text": "SND,",
+      "speech": "SND,",
       "zoom": {
         "from": 1.09,
         "to": 1.09,
@@ -363,7 +363,7 @@
       "role": "development",
       "in": 18.12,
       "out": 19.15,
-      "text": "ICT,",
+      "speech": "ICT,",
       "zoom": {
         "from": 1.09,
         "to": 1.09,
@@ -384,7 +384,7 @@
       "role": "development",
       "in": 19.72,
       "out": 20.65,
-      "text": "SMC,",
+      "speech": "SMC,",
       "zoom": {
         "from": 1.09,
         "to": 1.09,
@@ -405,7 +405,7 @@
       "role": "development",
       "in": 21.37,
       "out": 22.58,
-      "text": "Fibo dan sebagainya.",
+      "speech": "Fibo dan sebagainya.",
       "zoom": {
         "from": 1.09,
         "to": 1.09,
@@ -426,7 +426,7 @@
       "role": "context",
       "in": 22.88,
       "out": 29.16,
-      "text": "Korang perasan tak pada ni? Yang ni saya bagi tahu, yang dah pengalaman ataupun yang newbie, tak kisahlah.",
+      "speech": "Korang perasan tak pada ni? Yang ni saya bagi tahu, yang dah pengalaman ataupun yang newbie, tak kisahlah.",
       "zoom": {
         "from": 1.0,
         "to": 1.04,
@@ -441,7 +441,7 @@
       "role": "development",
       "in": 31.55,
       "out": 37.65,
-      "text": "Yang saya perasan, itu yang kerap berlaku, manipulation ataupun fake out dalam market gold",
+      "speech": "Yang saya perasan, itu yang kerap berlaku, manipulation ataupun fake out dalam market gold",
       "zoom": {
         "from": 1.06,
         "to": 1.13,
@@ -463,7 +463,7 @@
       "role": "development",
       "in": 38.58,
       "out": 40.05,
-      "text": "beberapa tahun terdekat ni.",
+      "speech": "beberapa tahun terdekat ni.",
       "zoom": {
         "from": 1.0,
         "to": 1.0,
@@ -477,7 +477,7 @@
       "role": "development",
       "in": 43.7,
       "out": 46.12,
-      "text": "Apa yang saya nampak, bila market dah",
+      "speech": "Apa yang saya nampak, bila market dah",
       "zoom": {
         "from": 1.06,
         "to": 1.06,
@@ -492,7 +492,7 @@
       "role": "development",
       "in": 46.78,
       "out": 48.82,
-      "text": "se-agresif macam ni,",
+      "speech": "se-agresif macam ni,",
       "zoom": {
         "from": 1.13,
         "to": 1.13,
@@ -513,7 +513,7 @@
       "role": "development",
       "in": 49.66,
       "out": 50.62,
-      "text": "solution dia",
+      "speech": "solution dia",
       "zoom": {
         "from": 1.0,
         "to": 1.0079,
@@ -528,7 +528,7 @@
       "role": "development",
       "in": 52.26,
       "out": 54.25,
-      "text": "untuk trader-trader,",
+      "speech": "untuk trader-trader,",
       "zoom": {
         "from": 1.0079,
         "to": 1.0242,
@@ -542,7 +542,7 @@
       "role": "development",
       "in": 54.78,
       "out": 55.48,
-      "text": "kenapa",
+      "speech": "kenapa",
       "zoom": {
         "from": 1.0242,
         "to": 1.03,
@@ -556,7 +556,7 @@
       "role": "development",
       "in": 55.98,
       "out": 58.02,
-      "text": "you guys tak cuba instrument yang lain?",
+      "speech": "you guys tak cuba instrument yang lain?",
       "zoom": {
         "from": 1.08,
         "to": 1.08,
@@ -577,7 +577,7 @@
       "role": "development",
       "in": 58.88,
       "out": 61.05,
-      "text": "Seperti contoh yang dulu-dulu, famous dulu.",
+      "speech": "Seperti contoh yang dulu-dulu, famous dulu.",
       "zoom": {
         "from": 1.0,
         "to": 1.0,
@@ -592,7 +592,7 @@
       "role": "development",
       "in": 63.12,
       "out": 65.4,
-      "text": "GBPJPY, GJ,",
+      "speech": "GBPJPY, GJ,",
       "zoom": {
         "from": 1.07,
         "to": 1.07,
@@ -613,7 +613,7 @@
       "role": "development",
       "in": 67.1,
       "out": 68.72,
-      "text": "WTI, oil.",
+      "speech": "WTI, oil.",
       "zoom": {
         "from": 1.0,
         "to": 1.0,
@@ -634,7 +634,7 @@
       "role": "development",
       "in": 70.05,
       "out": 70.85,
-      "text": "Oil best.",
+      "speech": "Oil best.",
       "zoom": {
         "from": 1.11,
         "to": 1.11,
@@ -655,7 +655,7 @@
       "role": "development",
       "in": 71.05,
       "out": 73.72,
-      "text": "Sebab apa yang saya nampak, oil for now,",
+      "speech": "Sebab apa yang saya nampak, oil for now,",
       "zoom": {
         "from": 1.0,
         "to": 1.03,
@@ -670,7 +670,7 @@
       "role": "development",
       "in": 74.42,
       "out": 82.02,
-      "text": "dia lagi banyak respect area-area yang saya bagi tahu tadi, SOP yang korang pakai tu, SNR, SND dan sebagainya.",
+      "speech": "dia lagi banyak respect area-area yang saya bagi tahu tadi, SOP yang korang pakai tu, SNR, SND dan sebagainya.",
       "zoom": {
         "from": 1.08,
         "to": 1.0,
@@ -684,7 +684,7 @@
       "role": "payoff",
       "in": 83.28,
       "out": 86.72,
-      "text": "Banyak dia respect berbanding dengan gold. Untuk sekarang,",
+      "speech": "Banyak dia respect berbanding dengan gold. Untuk sekarang,",
       "zoom": {
         "from": 1.06,
         "to": 1.11,
@@ -706,7 +706,7 @@
       "role": "payoff",
       "in": 86.98,
       "out": 88.28,
-      "text": "why not you guys tak",
+      "speech": "why not you guys tak",
       "zoom": {
         "from": 1.0,
         "to": 1.0,
@@ -721,7 +721,7 @@
       "role": "development",
       "in": 88.88,
       "out": 90.05,
-      "text": "fokus je terik dekat",
+      "speech": "fokus je terik dekat",
       "zoom": {
         "from": 1.09,
         "to": 1.09,
@@ -735,7 +735,7 @@
       "role": "development",
       "in": 90.47,
       "out": 91.18,
-      "text": "instrument tu?",
+      "speech": "instrument tu?",
       "zoom": {
         "from": 1.09,
         "to": 1.09,
@@ -749,7 +749,7 @@
       "role": "ending",
       "in": 91.98,
       "out": 92.45,
-      "text": "Setuju tak?",
+      "speech": "Setuju tak?",
       "zoom": {
         "from": 1.0,
         "to": 1.0,
@@ -771,7 +771,7 @@
       "role": "ending",
       "in": 93.52,
       "out": 95.08,
-      "text": "Cuba korang komen nak tengok macam mana.",
+      "speech": "Cuba korang komen nak tengok macam mana.",
       "zoom": {
         "from": 1.05,
         "to": 1.0,

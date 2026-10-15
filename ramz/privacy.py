@@ -21,11 +21,22 @@ an unprotected frame.
 
 Manual keyframed regions (--regions) are always applied on top.
 
+Identity mode (--only me.jpg): blur ONE person and leave everyone else as is.
+YuNet detects every face on every frame, SFace embeds it, faces are linked
+into tracks, and each track is judged on its mean embedding (one bad angle
+cannot flip it). The reference is bootstrapped: the photo finds the person's
+most certain frames, and those frames (same day, same light) become the
+reference. A track is the person if it is close to that reference, or close
+enough and clearly closer to it than to every other confident identity in the
+video. Gaps up to --join-gap inside the person's appearances are bridged.
+Models: footage/models/ (opencv_zoo YuNet 2023mar + SFace 2021dec).
+
 Writes <output>.privacy.json. ramz.render refuses privacy_required plans
 without it, and warns if it lists anything for review.
 
 Usage:
   python3 -m ramz.privacy raw.mov -o protected.mp4 [--method soft|pixel|solid] [--regions manual.json]
+  python3 -m ramz.privacy raw.mov -o protected.mp4 --only footage/ref/me.jpg   # only this person
   manual.json: [{"t": 0.0, "x": 0.4, "y": 0.1, "w": 0.2, "h": 0.25}, {"t": 4.0, ...}]
 """
 import argparse
@@ -90,6 +101,159 @@ def pick_primary(dets, prev):
     if prev is not None:
         return min(dets, key=lambda d: (d[0] - prev[0]) ** 2 + (d[1] - prev[1]) ** 2)
     return max(dets, key=lambda d: d[2] * d[3])
+
+
+MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "footage", "models")
+YUNET = "face_detection_yunet_2023mar.onnx"
+SFACE = "face_recognition_sface_2021dec.onnx"
+
+
+class IdentityDetector:
+    """YuNet faces + SFace embeddings (unit vectors)."""
+
+    def __init__(self, cv2, model_dir=MODEL_DIR):
+        paths = [os.path.join(model_dir, m) for m in (YUNET, SFACE)]
+        for pth in paths:
+            if not os.path.exists(pth) or os.path.getsize(pth) < 100000:
+                sys.exit(f"[ramz] Model tiada: {pth}\n       Muat turun dari "
+                         "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/"
+                         "{face_detection_yunet,face_recognition_sface}/<fail>")
+        self.cv2 = cv2
+        self.det = cv2.FaceDetectorYN.create(paths[0], "", (320, 320), 0.55, 0.3, 5000)
+        self.rec = cv2.FaceRecognizerSF.create(paths[1], "")
+
+    def __call__(self, img, min_embed=24):
+        import numpy as np
+        self.det.setInputSize((img.shape[1], img.shape[0]))
+        _, faces = self.det.detect(img)
+        out = []
+        for f in ([] if faces is None else faces):
+            e = None
+            if f[2] >= min_embed:
+                e = self.rec.feature(self.rec.alignCrop(img, f)).flatten()
+                e = e / np.linalg.norm(e)
+            x, y, w, h = map(float, f[:4])
+            out.append((uncrop(x, y, w, h, img.shape[1], img.shape[0]), e))
+        return out
+
+
+def uncrop(x, y, w, h, W, H, edge=3, aspect=0.8):
+    """A face cut by the frame edge is detected narrow/short: restore its
+    likely full size from the other side and push the centre outwards, so the
+    mask covers the visible part with full margin. Returns (cx, cy, w, h)."""
+    if x <= edge or x + w >= W - edge:
+        full = max(w, h * aspect)
+        x = x + w - full if x <= edge else x
+        w = full
+    if y <= edge or y + h >= H - edge:
+        full = max(h, w / aspect)
+        y = y + h - full if y <= edge else y
+        h = full
+    return (x + w / 2, y + h / 2, w, h)
+
+
+def link_tracks(dets, max_skip=8):
+    """dets: per-frame list of (box, emb). Returns tracks: lists of (frame, box, emb)."""
+    import numpy as np
+    tracks = []
+    for i, row in enumerate(dets):
+        taken = set()
+        for box, emb in sorted(row, key=lambda d: -d[0][2]):
+            best, score = None, 0.0
+            for k, t in enumerate(tracks):
+                fi, lb, _ = t[-1]
+                if k in taken or i - fi > max_skip:
+                    continue
+                dist = np.hypot(lb[0] - box[0], lb[1] - box[1]) / max(lb[2], box[2])
+                sc = (1 - dist) * min(lb[2], box[2]) / max(lb[2], box[2]) if dist < 0.7 else 0
+                if sc > score:
+                    best, score = k, sc
+            if best is None:
+                tracks.append([])
+                best = len(tracks) - 1
+            tracks[best].append((i, box, emb))
+            taken.add(best)
+    return tracks
+
+
+def unit_mean(vs):
+    import numpy as np
+    m = np.mean(vs, 0)
+    return m / np.linalg.norm(m)
+
+
+def select_person(tracks, ref, accept=0.52, maybe=0.40, margin=0.10, seed=0.55):
+    """Decide which tracks are the reference person. Returns (flags, report rows)."""
+    import numpy as np
+    embs = [[e for _, _, e in t if e is not None] for t in tracks]
+    # bootstrap the reference from the video's own most certain frames
+    sure = [e for es in embs for e in es if float(e @ ref) >= seed]
+    U = unit_mean(sure) if len(sure) >= 15 else ref
+    means = [unit_mean(es) if es else None for es in embs]
+    # other confident identities: sizeable tracks clearly not the person
+    others = [m for m, t in zip(means, tracks) if m is not None and len(t) >= 15 and float(m @ U) < maybe]
+    flags, rows = [], []
+    for t, m in zip(tracks, means):
+        if m is None:
+            flags.append(False)
+            continue
+        su = float(m @ U)
+        so = max([float(m @ o) for o in others if o is not m] or [0.0])
+        yes = su >= accept or (su >= maybe and su > so + margin)
+        flags.append(yes)
+        if len(t) >= 10:
+            rows.append({"t0": t[0][0], "t1": t[-1][0], "frames": len(t), "sim_person": round(su, 3),
+                         "sim_other": round(so, 3), "person": yes})
+    return flags, rows, len(sure)
+
+
+def person_raw(tracks, flags, n):
+    """Per-frame box of the person (largest if several)."""
+    raw = [None] * n
+    for t, f in zip(tracks, flags):
+        if not f:
+            continue
+        for i, box, _ in t:
+            if raw[i] is None or box[2] > raw[i][2]:
+                raw[i] = box
+    return raw
+
+
+def build_segments(raw, fps, join_gap_s, smooth_s, extend_s=0.3, gap_grow=1.6):
+    """Like build_track, but only across the person's appearances: gaps longer
+    than join_gap_s split segments, and nothing is masked between segments.
+    Each segment is extended by extend_s (holding its edge box) both ways."""
+    n = len(raw)
+    idx = [i for i in range(n) if raw[i] is not None]
+    track, gaps = [None] * n, []
+    if not idx:
+        return track, gaps, []
+    runs, cur = [], [idx[0]]
+    for a, b in zip(idx, idx[1:]):
+        if (b - a) / fps > join_gap_s:
+            runs.append(cur)
+            cur = []
+        cur.append(b)
+    runs.append(cur)
+    ext = int(round(extend_s * fps))
+    spans, extra = [], [[] for _ in range(n)]
+    for run in runs:
+        a, b = max(0, run[0] - ext), min(n - 1, run[-1] + ext)
+        sub, g = build_track(raw[a:b + 1], fps, 0.8, smooth_s)
+        for k, box in enumerate(sub):
+            if box is not None and (track[a + k] is None or box[2] > track[a + k][2]):
+                track[a + k] = box
+        gaps += [[round(x + a / fps, 2), round(y + a / fps, 2)] for x, y in g]
+        spans.append([round(a / fps, 2), round(b / fps, 2)])
+        # inside a gap the head may leave the straight line between the two
+        # detections (e.g. out past the frame edge and back): also hold both
+        # end boxes over the gap, enlarged: undetected means the head may be
+        # anywhere near its last/next position (turning, entering from an edge)
+        for p, q in zip(run, run[1:]):
+            if q - p >= 4:
+                for k in range(p + 1, q):
+                    extra[k] += [(b[0], b[1], b[2] * gap_grow, b[3] * gap_grow) for b in (raw[p], raw[q])]
+    return track, gaps, spans, extra
 
 
 def build_track(raw, fps, max_gap_s, smooth_s):
@@ -238,6 +402,9 @@ def main():
     ap.add_argument("--fps", type=float, default=30.0, help="output constant frame rate")
     ap.add_argument("--crf", type=int, default=14, help="near-lossless intermediate")
     ap.add_argument("--no-audit", action="store_true")
+    ap.add_argument("--only", help="reference photo: blur ONLY this person (YuNet + SFace identity tracking)")
+    ap.add_argument("--join-gap", type=float, default=1.2,
+                    help="--only: bridge gaps up to this long (s) inside the person's appearances")
     ap.add_argument("--leak-ratio", type=float, default=0.15,
                     help="max fraction of facial edge detail allowed to survive the blur")
     args = ap.parse_args()
@@ -255,7 +422,33 @@ def main():
             regions = sorted(json.load(fh), key=lambda r: r["t"])
 
     track, long_gaps, runs, hits, raw = None, [], 0, 0, []
-    if not args.no_detect:
+    identity, hold = None, None
+    if args.only and not args.no_detect:
+        print("[ramz] privacy 1/3: detect + identiti (hanya orang dalam foto rujukan)", flush=True)
+        idd = IdentityDetector(cv2)
+        ref_img = cv2.imread(args.only)
+        if ref_img is None:
+            sys.exit(f"[ramz] Foto rujukan tidak boleh dibaca: {args.only}")
+        ref_faces = [d for d in idd(ref_img) if d[1] is not None]
+        if not ref_faces:
+            sys.exit("[ramz] Tiada wajah dikesan dalam foto rujukan.")
+        ref = max(ref_faces, key=lambda d: d[0][2])[1]
+        dets = []
+        for frame in frames(args.input, v, fps):
+            dets.append(idd(frame))
+        runs = len(dets)
+        tracks = link_tracks(dets)
+        flags, rows, n_sure = select_person(tracks, ref)
+        raw = person_raw(tracks, flags, len(dets))
+        hits = sum(r is not None for r in raw)
+        track, long_gaps, spans, hold = build_segments(raw, fps, args.join_gap, args.smooth)
+        others = sum(len(t) for t, f in zip(tracks, flags) if not f)
+        identity = {"reference": os.path.abspath(args.only), "bootstrap_frames": n_sure,
+                    "person_segments": spans, "tracks": rows, "other_faces_left_unblurred": others}
+        for r in rows:
+            print(f"[ramz]   track {r['t0'] / fps:6.2f}-{r['t1'] / fps:6.2f}s  orang={r['sim_person']:.2f} "
+                  f"lain={r['sim_other']:.2f}  -> {'BLUR' if r['person'] else 'biar'}")
+    elif not args.no_detect:
         print("[ramz] privacy 1/3: detect", flush=True)
         detect = Detector(cv2, W, args.detect_width)
         prev = None
@@ -285,6 +478,9 @@ def main():
         if track and i < len(track) and track[i] is not None:
             cx, cy, w, h = track[i]
             masks.append((cx, cy - h * 0.06, w * (1 + args.pad) / 2, h * (1 + args.pad) * 1.2 / 2))
+        if hold and i < len(hold):
+            for (hx, hy, hw, hh) in hold[i]:
+                masks.append((hx, hy - hh * 0.06, hw * (1 + args.pad) / 2, hh * (1 + args.pad) * 1.2 / 2))
         r = interp_regions(regions, i / fps)
         if r:
             masks.append(((r["x"] + r["w"] / 2) * W, (r["y"] + r["h"] / 2) * H, r["w"] * W / 2, r["h"] * H / 2))
@@ -322,6 +518,7 @@ def main():
             "detail_leaks": leak_ranges,
             "coverage_failures": cover_ranges,
         },
+        "identity": identity,
         "review_needed": long_gaps + leak_ranges + cover_ranges,
         "note": ("Audit: setiap frame yang ada wajah dikesan disemak — kotak wajah mesti di dalam mask, dan "
                  "butiran (edge) yang tinggal mesti di bawah ambang. Julat dalam review_needed mesti ditonton "

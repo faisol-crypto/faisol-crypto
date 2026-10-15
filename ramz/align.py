@@ -2,7 +2,7 @@
 
 Whisper word timestamps drift into pauses (a word "starts" in the silence
 before it), so cuts made on real speech boundaries drop or mistime captions.
-When each segment's spoken text is known (segment "text" in the plan, checked
+When each segment's spoken text is known (segment "speech" in the plan, checked
 by ear or against the transcript), this aligns that exact text to the audio of
 the segment with the multilingual MMS CTC aligner (torchaudio). Malay is Latin
 script, so it aligns natively; acronyms are aligned on their spoken form
@@ -34,6 +34,20 @@ SPOKEN = {
 }
 
 
+ONES = ["kosong", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "lapan", "sembilan"]
+
+
+def say_number(n):
+    """0-999 as spoken Malay (for alignment only)."""
+    if n < 10:
+        return ONES[n]
+    if n < 20:
+        return {10: "sepuluh", 11: "sebelas"}.get(n, ONES[n - 10] + "belas")
+    if n < 100:
+        return ONES[n // 10] + "puluh" + (ONES[n % 10] if n % 10 else "")
+    return ("seratus" if n // 100 == 1 else ONES[n // 100] + "ratus") + (say_number(n % 100) if n % 100 else "")
+
+
 def load_audio(path, sr=16000):
     with tempfile.NamedTemporaryFile(suffix=".f32") as tmp:
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", path, "-map", "0:a:0", "-ac", "1", "-ar", str(sr),
@@ -62,13 +76,16 @@ def main():
 
     lines, weak = [], []
     for seg in plan["segments"]:
-        text = seg.get("text")
+        text = seg.get("speech")
         if not text:
             continue
         words = text.split()
         spoken = []
         for w in words:
-            k = re.sub(r"[^a-z']", "", w.lower())
+            k = re.sub(r"[^a-z0-9']", "", w.lower())
+            if k.isdigit() and int(k) < 1000:
+                k = say_number(int(k))
+            k = re.sub(r"[^a-z']", "", k)
             spoken.append(SPOKEN.get(k, k) or "a")
         t0, t1 = seg["in"], seg["out"]
         clip = torch.from_numpy(audio[int(t0 * sr):int(t1 * sr)].copy()).unsqueeze(0)
