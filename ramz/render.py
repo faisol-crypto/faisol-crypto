@@ -379,6 +379,12 @@ class Renderer:
             for cue in seg.get("sfx", []):
                 yield idx, cue
 
+    def limiter(self):
+        """Brick-wall safety after loudnorm: loudnorm can't always hold the
+        true-peak ceiling on sharp transients (crowds, claps, SFX)."""
+        tp = self.brand["audio"]["true_peak_db"] - 0.3
+        return f"alimiter=limit={10 ** (tp / 20):.4f}:attack=2:release=60:level=false,aresample=48000"
+
     def loudnorm(self, wav):
         target = self.plan.get("audio", {}).get("target_lufs", self.brand["audio"]["target_lufs"])
         tp = self.brand["audio"]["true_peak_db"]
@@ -457,12 +463,12 @@ class Renderer:
             clean_path = stem + "_clean.mp4"
             chain.append(f"{base}split=2[vclean][vsub0]")
             chain.append(f"[vsub0]{ass_filter}[vsub]")
-            chain.append("[1:a]" + norm + ",asplit=2[a0][a1]")
+            chain.append("[1:a]" + norm + "," + self.limiter() + ",asplit=2[a0][a1]")
             outputs += ["-map", "[vsub]", "-map", "[a0]", *enc, self.out_path,
                         "-map", "[vclean]", "-map", "[a1]", *enc, clean_path]
         else:
             chain.append(f"{base}null[vout]")
-            chain.append("[1:a]" + norm + "[a0]")
+            chain.append("[1:a]" + norm + "," + self.limiter() + "[a0]")
             outputs += ["-map", "[vout]", "-map", "[a0]", *enc, self.out_path]
         cmd = ["ffmpeg", "-y", "-hide_banner", "-i", master, "-i", mix, *gfx_inputs,
                "-filter_complex", ";".join(chain), *outputs]

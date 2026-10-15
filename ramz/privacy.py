@@ -369,16 +369,19 @@ def apply_masks(cv2, np, frame, masks, method, col):
         cv2.ellipse(alpha, (int(cx - x0), int(cy - y0)), (max(1, int(ax)), max(1, int(ay))), 0, 0, 360, 1.0, -1)
     alpha = cv2.GaussianBlur(alpha, (feather * 2 + 1, feather * 2 + 1), 0)
     alpha = np.clip(alpha * 1.6, 0, 1)[..., None]  # solid core, soft edge
+    # strength follows the face: a big close-up face (wide selfie lens) needs
+    # coarser blocks / a wider blur than a small one to lose its features
+    face = max(2 * max(ax, ay) for _, _, ax, ay in masks)
     if method == "solid":
         cover = np.empty_like(roi)
         cover[:] = col
     elif method == "pixel":
-        blk = max(8, int(min(W, H) * 0.035))
+        blk = max(8, int(min(W, H) * 0.035), int(face / 7))
         mosaic = cv2.resize(roi, (max(1, rw // blk), max(1, rh // blk)), interpolation=cv2.INTER_AREA)
         cover = cv2.GaussianBlur(cv2.resize(mosaic, (rw, rh), interpolation=cv2.INTER_NEAREST), (blk | 1, blk | 1), 0)
     else:
         # downscale -> heavy blur twice -> upscale: strong, smooth and cheap
-        k = max(3, int(min(W, H) * 0.09) // 4) | 1
+        k = max(3, int(min(W, H) * 0.09) // 4, int(face * 0.16) // 4) | 1
         small = cv2.resize(roi, (max(1, rw // 4), max(1, rh // 4)), interpolation=cv2.INTER_AREA)
         small = cv2.GaussianBlur(cv2.GaussianBlur(small, (k, k), 0), (k, k), 0)
         cover = cv2.resize(small, (rw, rh), interpolation=cv2.INTER_LINEAR)
