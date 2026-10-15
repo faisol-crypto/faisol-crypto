@@ -1,0 +1,472 @@
+{
+  "_comment": "SIR RAMZ v2.0 — VID5 (copy_CEAD5ADA…): temu bual sifu lama tentang WTI. Privasi: HANYA wajah speaker diblur (identiti; track dipecah bila kamera beralih ke sifu); sifu tidak diblur atas permintaan speaker. Transkrip dibetulkan ikut konteks (PERLU DISAHKAN): 'patut ceria'->'patuh syariah', 'bolotai'->'volatile'. Disembunyi dari caption sehingga disahkan: nama 'Hocky' (0:27) dan simbol 'XPU' (1:09). Dibuang: 'Ha'/ulangan soalan pertama, 'tambah sedar lah', 'Dia tak,', 'tukaran' x4 -> x2, 'Lagi saya,', 'Oh okay', bahagian telefon (21–24s), 'Okay guys, dengar' (wajah speaker semasa kamera berpusing). Dakwaan patuh syariah dan broker ialah PENDAPAT sifu — grafik membingkaikannya sebagai pendapat, bukan fakta. Warna: lampu lapangan terbang + highlight HDR menjadikan baju putih sifu cyan; babak sifu dinyahtepu cyan/biru (per-segment) — babak speaker tidak disentuh supaya cetakan biru baju kekal.",
+  "source": "../footage/work5/VID5_protected.mp4",
+  "privacy_required": true,
+  "brand": "../brand/sirramz.json",
+  "output": {
+    "path": "../footage/out5/SIRRAMZ_SIFUWTI.mp4",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "crf": 17,
+    "preset": "slow"
+  },
+  "fit": "crop",
+  "correction": [
+    "unsharp=5:5:0.3:5:5:0",
+    "curves=master='0/0 0.5/0.5 0.85/0.82 1/0.95'"
+  ],
+  "grade": "natural",
+  "vignette": 0.16,
+  "audio": {
+    "target_lufs": -14,
+    "highpass": 100,
+    "denoise": true,
+    "denoise_nf": -36,
+    "voice_eq": true
+  },
+  "music": {
+    "file": "../assets/music/sirramz_bed.wav",
+    "gain_db": -25,
+    "duck": true,
+    "fade_in": 0.8,
+    "fade_out": 2.2
+  },
+  "captions": {
+    "transcript": "../footage/report5/VID5.forced.json",
+    "replace": {},
+    "omit": [
+      "hocky",
+      "xpu"
+    ],
+    "highlight": [
+      "wti",
+      "gold",
+      "patuh",
+      "syariah",
+      "volatile",
+      "volatility",
+      "laju",
+      "sifu",
+      "order",
+      "spread",
+      "margin",
+      "leverage",
+      "broker",
+      "oil"
+    ],
+    "highlight_color": "#D9B56A",
+    "max_words": 3,
+    "uppercase": true,
+    "y": 0.72,
+    "size": 0.058,
+    "min_prob": 0.15,
+    "drop_below": 0.0
+  },
+  "graphics": [
+    {
+      "type": "title",
+      "seg": "hook",
+      "at": 0.0,
+      "dur": 1.55,
+      "line1": "Pendapat sifu lama:",
+      "line2": "PATUH SYARIAH?",
+      "size1": 50,
+      "size2": 96,
+      "region": [
+        60,
+        40,
+        960,
+        372
+      ]
+    },
+    {
+      "type": "compare",
+      "seg": "u3",
+      "at": 0.0,
+      "dur": 3.4,
+      "title": "SIFU LAMA BERALIH",
+      "from": "GOLD",
+      "to": [
+        "WTI"
+      ],
+      "to_at": [
+        1.65
+      ],
+      "region": [
+        60,
+        40,
+        960,
+        430
+      ]
+    },
+    {
+      "type": "keyword",
+      "seg": "a2",
+      "at": 0.1,
+      "dur": 2.5,
+      "text": "Tak selaju gold.",
+      "size": 80,
+      "region": [
+        60,
+        50,
+        960,
+        250
+      ]
+    },
+    {
+      "type": "endcard",
+      "seg": "b4",
+      "at": 0.2,
+      "dur": 2.3,
+      "question": "Pendapat sifu lama",
+      "cta": "pasal WTI.",
+      "cta_size": 100,
+      "region": [
+        60,
+        40,
+        960,
+        380
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "id": "hook",
+      "role": "hook",
+      "in": 0.0,
+      "out": 1.6,
+      "speech": "WTI, confirm patuh syariah.",
+      "purpose": "HOOK — dakwaan terkuat sifu (dari hujung rakaman, diulang pada 1:21) diletak paling depan; dibingkai sebagai soalan/pendapat.",
+      "sfx": [
+        {
+          "file": "../assets/sfx/soft_impact.wav",
+          "at": 0.05,
+          "gain_db": -18
+        }
+      ],
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "u1",
+      "role": "context",
+      "in": 2.02,
+      "out": 4.55,
+      "speech": "Ni, gold, volatile gila tu lah."
+    },
+    {
+      "id": "u2",
+      "role": "context",
+      "in": 5.52,
+      "out": 8.45,
+      "speech": "Jadi, kalau korang perasan, ramai sifu-sifu yang lama,"
+    },
+    {
+      "id": "u3",
+      "role": "context",
+      "in": 9.3,
+      "out": 11.72,
+      "speech": "dia, daripada gold, dia beralih kepada WTI.",
+      "sfx": [
+        {
+          "file": "../assets/sfx/ui_blip.wav",
+          "at": 1.7,
+          "gain_db": -23
+        }
+      ]
+    },
+    {
+      "id": "u4",
+      "role": "context",
+      "in": 11.72,
+      "out": 13.4,
+      "speech": "So, kita jumpa salah satu sifu"
+    },
+    {
+      "id": "u5",
+      "role": "context",
+      "in": 14.27,
+      "out": 16.08,
+      "speech": "lama yang trade WTI."
+    },
+    {
+      "id": "u6",
+      "role": "context",
+      "in": 16.68,
+      "out": 18.1,
+      "speech": "Kita cuba tanya dia."
+    },
+    {
+      "id": "q1",
+      "role": "development",
+      "in": 27.5,
+      "out": 30.15,
+      "speech": "Macam mana pendapat tuan Hocky pasal WTI ni?",
+      "sfx": [
+        {
+          "file": "../assets/sfx/whoosh.wav",
+          "at": 0.0,
+          "gain_db": -22
+        }
+      ],
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "a1",
+      "role": "development",
+      "in": 30.7,
+      "out": 33.1,
+      "speech": "WTI ni, dia, volatility dia",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "a2",
+      "role": "development",
+      "in": 33.6,
+      "out": 36.35,
+      "speech": "tak terlalu laju macam gold lah.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "a3",
+      "role": "payoff",
+      "in": 37.1,
+      "out": 38.5,
+      "speech": "Dan paling best,",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "a4",
+      "role": "payoff",
+      "in": 39.6,
+      "out": 40.3,
+      "speech": "patuh syariah.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x1",
+      "role": "development",
+      "in": 42.2,
+      "out": 44.98,
+      "speech": "Sebab kebanyakan kita, kita tak sedar.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x2",
+      "role": "development",
+      "in": 45.9,
+      "out": 47.85,
+      "speech": "Bukan salah kita pun, tak tahu.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x3",
+      "role": "development",
+      "in": 48.25,
+      "out": 51.9,
+      "speech": "Yang kebanyakan instrument-instrument yang ada kat pasaran ni,",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x4",
+      "role": "development",
+      "in": 52.38,
+      "out": 53.45,
+      "speech": "dia tak terus",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x5",
+      "role": "development",
+      "in": 55.65,
+      "out": 59.45,
+      "speech": "ke instrument tu sendiri. Contoh macam WTI, West Texas Intermediate.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x6",
+      "role": "development",
+      "in": 60.8,
+      "out": 62.9,
+      "speech": "Order tu tak sampai kepada WTI.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x7",
+      "role": "development",
+      "in": 64.2,
+      "out": 65.55,
+      "speech": "So, dia ada tukaran-tukaran.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x8",
+      "role": "development",
+      "in": 66.65,
+      "out": 67.45,
+      "speech": "Contoh macam",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x9",
+      "role": "development",
+      "in": 69.1,
+      "out": 69.85,
+      "speech": "XPU",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x10",
+      "role": "development",
+      "in": 70.3,
+      "out": 72.8,
+      "speech": "lepas tu dia ada US Oil.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x11",
+      "role": "development",
+      "in": 74.1,
+      "out": 75.25,
+      "speech": "Itu instrument-instrument yang",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x12",
+      "role": "development",
+      "in": 76.05,
+      "out": 78.4,
+      "speech": "saya tak pandai nak confirm yang",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x13",
+      "role": "development",
+      "in": 79.5,
+      "out": 80.7,
+      "speech": "instrument tu patuh syariah.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "x14",
+      "role": "payoff",
+      "in": 81.15,
+      "out": 83.25,
+      "speech": "So, kalau ada WTI, confirm patuh syariah.",
+      "sfx": [
+        {
+          "file": "../assets/sfx/bass_hit.wav",
+          "at": 1.4,
+          "gain_db": -21
+        }
+      ],
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "b1",
+      "role": "development",
+      "in": 84.58,
+      "out": 89.7,
+      "speech": "saya dah tiga bulan dengan Tuan Naim. Dia dah masuk macam-macam jenis broker.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "b2",
+      "role": "development",
+      "in": 89.7,
+      "out": 92.3,
+      "speech": "Selepas ICM dulu, kami tak jumpa lagi",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "b3",
+      "role": "development",
+      "in": 92.8,
+      "out": 97.7,
+      "speech": "broker yang boleh offer terbaik dari segi spread, margin dengan leverage.",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    },
+    {
+      "id": "b4",
+      "role": "ending",
+      "in": 100.6,
+      "out": 103.18,
+      "speech": "Margin yang paling best sekali lah untuk kita nak trade.",
+      "transition_out": "dip",
+      "purpose": "ENDING — tamat sebelum kamera berpusing ke speaker (103.6s).",
+      "correction": [
+        "huesaturation=saturation=-0.9:colors=c+b:strength=3",
+        "huesaturation=saturation=-0.4:colors=c"
+      ]
+    }
+  ]
+}

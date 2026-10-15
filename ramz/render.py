@@ -262,7 +262,9 @@ class Renderer:
         v.append(self.fit_filters(fit, seg.get("crop_cx", 0.5), seg.get("crop_cy", 0.5)))
         if seg.get("zoom"):
             v.append(self.zoom_filter(seg["zoom"], dur))
-        v += self.plan.get("correction", [])  # technical fix (e.g. white balance) before the creative grade
+        # technical fix (e.g. white balance) before the creative grade; a segment
+        # may add its own (e.g. a different light source in one shot)
+        v += self.plan.get("correction", []) + seg.get("correction", [])
         v += GRADES[grade]
         vig = seg.get("vignette", self.plan.get("vignette", 0.0))
         if vig:

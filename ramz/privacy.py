@@ -26,9 +26,10 @@ YuNet detects every face on every frame, SFace embeds it, faces are linked
 into tracks, and each track is judged on its mean embedding (one bad angle
 cannot flip it). The reference is bootstrapped: the photo finds the person's
 most certain frames, and those frames (same day, same light) become the
-reference. A track is the person if it is close to that reference, or close
-enough and clearly closer to it than to every other confident identity in the
-video. Gaps up to --join-gap inside the person's appearances are bridged.
+reference. Tracks are split where the identity flips (the camera swings from the person
+to a guest); a track is left unblurred only when it is clearly closer to
+another identity seen in the video, or barely like the person — in doubt it
+is blurred. Gaps up to --join-gap inside the person's appearances are bridged.
 Models: footage/models/ (opencv_zoo YuNet 2023mar + SFace 2021dec).
 
 Writes <output>.privacy.json. ramz.render refuses privacy_required plans
@@ -182,29 +183,99 @@ def unit_mean(vs):
     return m / np.linalg.norm(m)
 
 
-def select_person(tracks, ref, accept=0.52, maybe=0.40, margin=0.10, seed=0.55):
-    """Decide which tracks are the reference person. Returns (flags, report rows)."""
+def split_by_identity(tracks, U, others, split_ids, win=15, min_run=8):
+    """A position-linked track can hand over from one person to another (the
+    camera swings from the speaker to a guest). Split it where the per-frame
+    identity flips (median-smoothed), keeping runs of at least min_run frames."""
+    import numpy as np
+    if not others:
+        return tracks
+    out = []
+    for t in tracks:
+        d = []
+        for _, _, e in t:
+            d.append(np.nan if e is None else float(e @ U) - max(float(e @ o) for o in others))
+        d = np.array(d)
+        if np.all(np.isnan(d)):
+            out.append(t)
+            continue
+        idx = np.arange(len(d))
+        ok = ~np.isnan(d)
+        d = np.interp(idx, idx[ok], d[ok])
+        h = win // 2
+        sm = np.array([np.median(d[max(0, i - h):i + h + 1]) for i in range(len(d))])
+        lab = sm > 0
+        runs, start = [], 0
+        for i in range(1, len(lab) + 1):
+            if i == len(lab) or lab[i] != lab[start]:
+                runs.append([start, i])
+                start = i
+        merged = []
+        for r in runs:  # short flickers join the previous run
+            if merged and r[1] - r[0] < min_run:
+                merged[-1][1] = r[1]
+            else:
+                merged.append(r)
+        if len(merged) > 1 and merged[0][1] - merged[0][0] < min_run:
+            merged[1][0] = 0
+            merged.pop(0)
+        out += [t[a:b] for a, b in merged]
+        if len(merged) > 1:
+            split_ids.update(id(x) for x in out[-len(merged):])
+    return out
+
+
+def select_person(tracks, ref, accept=0.40, clear=0.05, seed=0.55, floor=0.30, other_min=0.45):
+    """Decide which tracks are the reference person.
+
+    Returns (tracks, flags, report rows, n_bootstrap). A track is NOT the
+    person only when it is clearly closer to another identity seen in the
+    video (or barely like the person at all); when in doubt it is blurred —
+    the person's privacy comes first."""
     import numpy as np
     embs = [[e for _, _, e in t if e is not None] for t in tracks]
-    # bootstrap the reference from the video's own most certain frames
+    # bootstrap the reference from the video's own most certain frames (twice,
+    # so a merged-in guest frame that happened to pass the photo seed drops out)
     sure = [e for es in embs for e in es if float(e @ ref) >= seed]
     U = unit_mean(sure) if len(sure) >= 15 else ref
+    sure = [e for es in embs for e in es if float(e @ U) >= 0.6]
+    U = unit_mean(sure) if len(sure) >= 15 else U
     means = [unit_mean(es) if es else None for es in embs]
-    # other confident identities: sizeable tracks clearly not the person
-    others = [m for m, t in zip(means, tracks) if m is not None and len(t) >= 15 and float(m @ U) < maybe]
+    others = [m for m, es in zip(means, embs) if m is not None and len(es) >= 15 and float(m @ U) < accept]
+    # each other identity as one centroid per cluster (greedy, cosine >= 0.6)
+    cents = []
+    for m in others:
+        for c in cents:
+            if float(m @ unit_mean(c)) >= 0.6:
+                c.append(m)
+                break
+        else:
+            cents.append([m])
+    others = [unit_mean(c) for c in cents]
+    split_ids = set()
+    tracks = split_by_identity(tracks, U, others, split_ids)
     flags, rows = [], []
-    for t, m in zip(tracks, means):
-        if m is None:
+    for t in tracks:
+        es = [e for _, _, e in t if e is not None]
+        if not es:
             flags.append(False)
             continue
+        m = unit_mean(es)
         su = float(m @ U)
-        so = max([float(m @ o) for o in others if o is not m] or [0.0])
-        yes = su >= accept or (su >= maybe and su > so + margin)
+        so = max([float(m @ o) for o in others] or [0.0])
+        # someone else only when confidently matched to another identity;
+        # the person's own turned/blurred frames score low on everyone
+        clearly_other = so >= other_min and so > su + clear
+        if id(t) in split_ids:
+            # a piece cut out of a longer track needs much stronger evidence:
+            # the person's own up-turned / profile frames can drift toward a guest
+            clearly_other = so >= 0.65 and su <= 0.35
+        yes = su >= floor and not clearly_other
         flags.append(yes)
         if len(t) >= 10:
             rows.append({"t0": t[0][0], "t1": t[-1][0], "frames": len(t), "sim_person": round(su, 3),
                          "sim_other": round(so, 3), "person": yes})
-    return flags, rows, len(sure)
+    return tracks, flags, rows, len(sure)
 
 
 def person_raw(tracks, flags, n):
@@ -441,7 +512,7 @@ def main():
             dets.append(idd(frame))
         runs = len(dets)
         tracks = link_tracks(dets)
-        flags, rows, n_sure = select_person(tracks, ref)
+        tracks, flags, rows, n_sure = select_person(tracks, ref)
         raw = person_raw(tracks, flags, len(dets))
         hits = sum(r is not None for r in raw)
         track, long_gaps, spans, hold = build_segments(raw, fps, args.join_gap, args.smooth)
