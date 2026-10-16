@@ -1,0 +1,40 @@
+{
+  "_comment": "SIR RAMZ v2.0 — VID9 (copy_F0E33F53…): Macau malam, GRG community. Privasi: HANYA wajah speaker (pixel berskala wajah); Pak Long & orang awam tidak diblur. 'JLG' -> 'GRG' (konsisten dengan video GRG sebelum ini; PERLU DISAHKAN). Hook: 'Sir kat mana? Sir kat Macau sekarang ni' dipindah ke depan. Dibuang: 'Alright sir… do you want forum? Apa dia? Oh Pak Long' (tidak jelas/bertindih). Dakwaan keuntungan ('semua profit', 'RM20,000') dikekalkan sebagai kata-kata speaker — tiada grafik yang membesarkannya.",
+  "source": "../footage/work9/VID9_protected.mp4",
+  "privacy_required": true,
+  "brand": "../brand/sirramz.json",
+  "output": {"path": "../footage/out9/SIRRAMZ_GRG2.mp4", "width": 1080, "height": 1920, "fps": 30, "crf": 17, "preset": "slow"},
+  "fit": "crop",
+  "correction": ["unsharp=5:5:0.3:5:5:0", "curves=master='0/0 0.2/0.21 0.5/0.52 0.85/0.84 1/0.96'"],
+  "grade": "natural",
+  "vignette": 0.14,
+  "audio": {"target_lufs": -14, "highpass": 100, "denoise": true, "denoise_nf": -36, "voice_eq": true},
+  "music": {"file": "../assets/music/sirramz_bed_hk.wav", "gain_db": -24, "duck": true, "fade_in": 0.8, "fade_out": 2.2},
+  "captions": {"transcript": "../footage/report9/VID9.forced.json", "replace": {}, "omit": [],
+    "highlight": ["macau", "grg", "family", "community", "entry", "berdikari", "drone", "link", "bio", "guide", "sir"],
+    "highlight_color": "#D9B56A", "max_words": 3, "uppercase": true, "y": 0.72, "size": 0.058, "min_prob": 0.15, "drop_below": 0.0},
+  "graphics": [
+    {"type": "title", "seg": "hook", "at": 0.0, "dur": 3.0, "line1": "Sir kat mana?", "line2": "MACAU.", "size1": 54, "size2": 120, "region": [60, 40, 960, 372]},
+    {"type": "keyword", "seg": "a1", "at": 0.9, "dur": 2.0, "text": "Berdikari entry sendiri.", "gold": true, "size": 70, "region": [60, 50, 960, 250]},
+    {"type": "endcard", "seg": "plaza", "at": 0.2, "dur": 3.0, "question": "Nak belajar macam diorang?", "cta": "Link kat bio.", "cta_size": 104, "region": [60, 40, 960, 380]}
+  ],
+  "segments": [
+    {"id": "hook", "role": "hook", "in": 22.55, "out": 25.65, "speech": "Sir kat mana? Sir kat Macau sekarang ni.",
+     "purpose": "HOOK — lokasi + persona, dipindah dari tengah ke depan.", "sfx": [{"file": "../assets/sfx/soft_impact.wav", "at": 0.05, "gain_db": -19}]},
+    {"id": "p1", "role": "context", "in": 4.0, "out": 5.2, "speech": "Tak, Sir tengok ni.", "sfx": [{"file": "../assets/sfx/whoosh.wav", "at": 0.0, "gain_db": -22}]},
+    {"id": "p2", "role": "context", "in": 5.85, "out": 8.2, "speech": "Dalam family GRG, semua dekat profit dah tu."},
+    {"id": "p3", "role": "context", "in": 9.05, "out": 13.1, "speech": "Ni, okey dah cukup. Jom tidur. Dapat RM20,000. Dapat. Ni mana lagi?"},
+    {"id": "p4", "role": "context", "in": 13.6, "out": 15.2, "speech": "Dapat sell lagi diorang."},
+    {"id": "d1", "role": "development", "in": 15.9, "out": 20.25, "speech": "Kenapa diorang dapat entry? Walaupun Sir dekat sini. Kau dah tengok. Tengok, Sir tengah tengok drone tu."},
+    {"id": "d2", "role": "development", "in": 20.5, "out": 22.65, "speech": "Drone pun dah nak habis dah. Dah nak habis dah."},
+    {"id": "a1", "role": "payoff", "in": 26.75, "out": 29.5, "speech": "Tapi diorang boleh berdikari entry sendiri. Sebab apa?",
+     "sfx": [{"file": "../assets/sfx/ui_blip.wav", "at": 1.0, "gain_db": -22}]},
+    {"id": "a2", "role": "payoff", "in": 29.9, "out": 34.15, "speech": "Diorang masuk dalam GRG community. Sampai pandai, Sir akan ajar diorang."},
+    {"id": "c1", "role": "ending", "in": 34.3, "out": 36.65, "speech": "So you guys nak masuk belajar macam diorang juga,"},
+    {"id": "c2", "role": "ending", "in": 37.1, "out": 41.1, "speech": "You guys tekan link kat bio. Jumpa Sir kat sana. Sir akan guide korang daripada A to Z."},
+    {"id": "c3", "role": "ending", "in": 41.8, "out": 42.3, "speech": "Bye-bye."},
+    {"id": "plaza", "role": "ending", "in": 42.9, "out": 46.3, "captions": false, "gain_db": -6, "transition_out": "dip",
+     "zoom": {"from": 1.0, "to": 1.06, "cx": 0.5, "cy": 0.4}, "purpose": "ENDING — Plaza + kad akhir.",
+     "sfx": [{"file": "../assets/sfx/whoosh.wav", "at": 0.0, "gain_db": -22}]}
+  ]
+}
