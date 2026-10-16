@@ -275,6 +275,26 @@ def select_person(tracks, ref, accept=0.40, clear=0.05, seed=0.55, floor=0.30, o
         if len(t) >= 10:
             rows.append({"t0": t[0][0], "t1": t[-1][0], "frames": len(t), "sim_person": round(su, 3),
                          "sim_other": round(so, 3), "person": yes})
+    # a brief track sandwiched between two confident tracks of someone else at
+    # the same spot is that person looking down / turning — not the subject
+    conf_other = [(not f) and t and any(e is not None for _, _, e in t) and
+                  max([float(unit_mean([e for _, _, e in t if e is not None]) @ o) for o in others] or [0.0]) >= 0.65
+                  for t, f in zip(tracks, flags)]
+
+    def near(a, b, gap=6):
+        (fa, ba, _), (fb, bb, _) = a, b
+        return 0 <= fb - fa <= gap and np.hypot(ba[0] - bb[0], ba[1] - bb[1]) < 0.6 * max(ba[2], bb[2])
+
+    for k, (t, f) in enumerate(zip(tracks, flags)):
+        if not f or len(t) >= 30:
+            continue
+        before = any(c and near(o[-1], t[0]) for o, c in zip(tracks, conf_other))
+        after = any(c and near(t[-1], o[0]) for o, c in zip(tracks, conf_other))
+        if before and after:
+            flags[k] = False
+            for r in rows:
+                if r["t0"] == t[0][0] and r["t1"] == t[-1][0]:
+                    r["person"] = False
     return tracks, flags, rows, len(sure)
 
 
